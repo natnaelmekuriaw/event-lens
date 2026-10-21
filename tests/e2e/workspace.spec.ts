@@ -1,0 +1,31 @@
+import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+
+test('owner creates a workspace and project, updates settings, and rotates its key', async ({ page }) => {
+  if (process.env.TEST_DATABASE_ISOLATED !== '1') throw new Error('Run pnpm verify to use an isolated database');
+  const workspace = `Demo ${randomUUID().slice(0, 8)}`;
+  await page.goto('/login');
+  await page.getByLabel('Email', { exact: true }).fill(process.env.TEST_OWNER_EMAIL!);
+  await page.getByLabel('Password', { exact: true }).fill(process.env.TEST_OWNER_PASSWORD!);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your workspaces' })).toBeVisible();
+  await page.getByRole('button', { name: 'New workspace' }).click();
+  await page.getByLabel('Workspace name').fill(workspace);
+  await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+  await page.getByRole('link').filter({ has: page.getByRole('heading', { name: workspace }) }).click();
+  await page.getByRole('button', { name: 'New project' }).click();
+  await page.getByLabel('Project name').fill('GalaxyBalls');
+  await page.getByRole('button', { name: 'Create project', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your public project key' })).toBeVisible();
+  await page.getByRole('button', { name: 'I’ve saved it' }).click();
+  await page.getByRole('link').filter({ has: page.getByRole('heading', { name: 'GalaxyBalls' }) }).click();
+  await page.getByLabel('Reporting timezone').fill('Africa/Nairobi');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByRole('status')).toHaveText('Project settings saved.');
+  await page.getByRole('button', { name: 'Rotate key', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm rotation' }).click();
+  await expect(page.getByRole('heading', { name: 'Your new public project key' })).toBeVisible();
+  await page.getByRole('button', { name: 'I’ve saved it' }).click();
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+});

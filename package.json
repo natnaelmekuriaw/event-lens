@@ -1,0 +1,37 @@
+{
+  "name": "eventlens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": { "node": ">=22.13.0 <23 || >=24.0.0" },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @eventlens/api --filter @eventlens/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test",
+    "db:generate": "pnpm --filter @eventlens/database generate",
+    "db:migrate": "pnpm --filter @eventlens/database migrate",
+    "verify": "node scripts/verify.mjs",
+    "setup": "node scripts/setup.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.64.1",
+    "@types/express": "5.0.6",
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  }
+}

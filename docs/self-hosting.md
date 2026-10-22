@@ -1,117 +1,162 @@
 # Self-hosting
 
-Phase 1 supports a source deployment of the dashboard and API with PostgreSQL.
-The supplied Compose file runs PostgreSQL only; application container images and
-a complete production Compose stack are not supplied.
+EventLens supports source deployment of the dashboard, API, and worker with
+PostgreSQL and Redis. Compose supplies PostgreSQL and Redis only; full application
+images and production orchestration remain later work.
 
 ## Local installation
 
 Follow the [README quickstart](../README.md#local-development). `pnpm setup`
-creates the root `.env` without overwriting an existing file. Keep that file
-private. Docker Compose persists PostgreSQL in the `postgres-data` volume.
+creates the root .env without overwriting an existing file. Add newly introduced
+settings from .env.example when upgrading an existing installation.
 
-Open `/setup` on the dashboard and enter `BOOTSTRAP_TOKEN` from `.env` to create
-the first owner and workspace. This operation is available once per installation.
-Sign in at `/login`, create a project, and save its public key when shown. Owners
-can invite teammates from the workspace team page and privately share the
-`/join#token=...` link. Links expire after 48 hours; recreating an invitation for
-the same email replaces the old link.
+Compose persists PostgreSQL in volume `eventlens-postgres` and Redis in
+`eventlens-redis`. Both listeners bind to loopback. Redis uses append-only
+persistence and noeviction; PostgreSQL receipts/outbox remain the recovery source
+for pending events even if Redis data is lost.
+
+Open /setup and use BOOTSTRAP_TOKEN from .env to create the first owner/workspace.
+Sign in, create a project, and save its public key when shown. Owners privately
+share /join#token=... invitations; links expire after 48 hours. Event collection
+uses public keys; dashboard management uses session cookies.
+
+`pnpm dev` starts API, dashboard, and worker. Run `pnpm demo` separately to
+open the synthetic GalaxyBalls flow on port 3003. Build shared packages before
+starting them; follow the README command sequence after contract or pipeline changes.
 
 ## Production configuration
 
-Use one API instance behind a private network boundary. Terminate public HTTPS
-at a reverse proxy that exposes the Next.js dashboard. Next.js forwards its
-`/api` requests to the private API. The API listens on all interfaces, so use
-firewall or container/network rules to prevent direct public access to port 3001. Keep PostgreSQL private as well.
+Use one API instance. Terminate HTTPS at a reverse proxy for the dashboard.
+Next.js forwards /api requests to the private API. SDKs can use the dashboard
+origin, or a dedicated HTTPS ingestion origin that routes only /api/v1/ingest to
+the API. Keep other API paths private when using a dedicated ingestion origin.
 
-Set the following values for the deployment:
+The API listens on all interfaces. Restrict direct access to its listener,
+PostgreSQL, and Redis through firewall or container/network rules. The worker
+health listener binds to loopback and is intended for local monitoring.
 
-| Variable                                            | Purpose                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------ |
-| `NODE_ENV`                                          | `production`                                                             |
-| `APP_URL`                                           | Exact public HTTPS dashboard origin, without credentials, path, or query |
-| `API_URL`                                           | Private HTTP or HTTPS API origin reachable from Next.js                  |
-| `PORT`                                              | API listener port, normally `3001`                                       |
-| `DATABASE_URL`                                      | PostgreSQL connection URL for the application                            |
-| `BETTER_AUTH_SECRET`                                | Unique random session secret of at least 32 characters                   |
-| `BOOTSTRAP_TOKEN`                                   | Unique random initial-owner setup token of at least 32 characters        |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | PostgreSQL container configuration when using the supplied Compose file  |
+| Variable                                      | Purpose                                                     |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| NODE_ENV                                      | production                                                  |
+| APP_URL                                       | Exact public HTTPS dashboard origin                         |
+| API_URL                                       | Private API origin reachable by Next.js                     |
+| PORT                                          | API listener, default 3001                                  |
+| DATABASE_URL                                  | PostgreSQL connection URL                                   |
+| REDIS_URL                                     | Redis/rediss URL; default redis://localhost:6379            |
+| WORKER_PORT                                   | Loopback worker health port, default 3002                   |
+| EVENT_RETENTION_DAYS                          | Analytics retention, default 90, allowed 7–3650             |
+| EVENTLENS_QUEUE_PREFIX                        | Shared API/worker/test queue namespace; default eventlens   |
+| BETTER_AUTH_SECRET                            | Unique random session secret of at least 32 characters      |
+| BOOTSTRAP_TOKEN                               | Unique random initial-owner token of at least 32 characters |
+| POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB | Supplied PostgreSQL container settings                      |
 
-`APP_URL` must use HTTPS in production. It controls trusted origins and secure
-cookies, so use the exact address users open. Preserve the browser's origin at
-the reverse proxy. `API_URL` may use HTTP for a trusted loopback or private
-container connection; use TLS when traffic crosses an untrusted network. Both
-values must be origins without credentials, paths, queries, or fragments.
+APP_URL must use HTTPS in production and match the origin users open. Preserve
+the browser Origin header at the proxy. API_URL can use HTTP on a trusted private
+connection; use TLS across untrusted networks. These variables must be origins
+without credentials, paths, queries, or fragments.
 
-The API development command loads the root `.env`; Next.js configuration also
-loads it. Production API processes need an explicit environment: provide it
-through a process supervisor, secret manager, or Node's `--env-file` option.
-Build the dashboard with the intended `API_URL`, because its proxy rewrite is
-produced at build time. Rebuild after changing this value.
+Use the same PostgreSQL database, Redis database, and queue prefix for a
+deployment's worker processes. Use distinct Redis namespaces for separate
+installations and test environments. A prefix does not authorize access to Redis;
+network restrictions and credentials still apply.
 
-After setting that environment, the operator prepares the deployment:
+Development commands load root .env. Production API and worker processes need
+an explicit environment supplied by a supervisor, secret manager, or Node's
+--env-file option. Next.js also loads root .env during configuration. Build the
+dashboard using the intended API_URL; rebuild after changing its proxy destination.
+
+After configuring the environment, the operator prepares the deployment:
 
 ```sh
 pnpm install --frozen-lockfile
+docker compose up -d --wait postgres redis
 pnpm db:generate
 pnpm db:migrate
 pnpm build
 ```
 
-From the repository root, start the API with
-`node --env-file=.env apps/api/dist/main.js` and the dashboard with
-`pnpm --filter @eventlens/web start`. Run each under a process supervisor with
-restart behavior and restricted network access. Configure TLS and log retention
-in the host infrastructure. Review [security limitations](../SECURITY.md) before
-allowing access.
+Run these as separate supervised processes from the repository root:
 
-Use `/api/health/live` to check the API process and `/api/health/ready` to check
-its database connection. These paths are also accessible through the dashboard
-proxy. Readiness failure should remove the instance from traffic.
+```sh
+node --env-file=.env apps/api/dist/main.js
+node --env-file=.env apps/worker/dist/main.js
+pnpm --filter @eventlens/web start
+```
+
+Configure restarts, private network access, TLS, proxy request/body limits, and
+log retention. The SDK already batches requests, but rate limits are local to one
+API process and socket peers can represent many users behind a proxy.
+
+## Health and failure handling
+
+API /api/health/live checks its process; /api/health/ready checks PostgreSQL.
+Those paths are available through the dashboard proxy. Worker /health/live and
+/health/ready are on loopback port 3002. Worker readiness includes dependency
+access and recent successful outbox dispatch. API readiness can succeed while
+Redis is unavailable because ingestion can still commit durable pending receipts.
+
+Monitor both readiness endpoints, PostgreSQL disk usage, Redis memory, pending
+receipt counts, and terminal failures. Restore Redis/worker connectivity to
+resume dispatch from the outbox. Owners/admins can inspect and replay retained
+failures in the explorer. See [event operations](events.md) for exact retry,
+identity, and retention rules.
+
+During maintenance, stop or drain public ingestion first. Allow workers to finish
+current jobs before stopping them. Accepted pending receipts survive process
+restarts. Configure enough shutdown time for active work; abrupt termination
+requires later redelivery.
 
 ## Backup and restore
 
-These examples apply to the supplied PostgreSQL Compose service. Run them as the
-installation operator from the repository root. Keep backups outside the
-repository, restrict permissions, encrypt copies, and test restoration on an
+Run these procedures as the installation operator against the intended Compose
+project. Keep encrypted backups outside the repository and test restore on an
 isolated instance. A Docker volume is not a backup.
 
-Create a consistent logical backup inside the container, then copy it locally:
+Create a consistent PostgreSQL logical backup and copy it locally:
 
 ```sh
 docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /tmp/eventlens-backup.dump'
 docker compose cp postgres:/tmp/eventlens-backup.dump ./eventlens-backup.dump
 ```
 
-Move the copied file to protected backup storage and preserve the deployment
-configuration and secrets separately. The sample filename is overwritten if
-reused; use dated filenames in your backup process.
+Move it into protected backup storage. Preserve deployment configuration/secrets
+separately, and use unique dated filenames in the backup process. The database
+contains accounts, receipts/outbox, analytics events, and identity links. Pending
+outbox work can reconstruct Redis delivery after restoration; Redis history is
+not the durable source of event payloads.
 
-Restoration replaces matching objects in the target database. Stop application
-processes first and confirm that the selected Compose project and database are
-the intended restore target. Restore only a trusted backup from a compatible
-EventLens revision:
+Restoration replaces matching target objects. Stop API and worker processes and
+confirm the target database/project before using a trusted compatible backup:
 
 ```sh
 docker compose cp ./eventlens-backup.dump postgres:/tmp/eventlens-backup.dump
 docker compose exec -T postgres sh -c 'pg_restore --clean --if-exists --no-owner --exit-on-error -U "$POSTGRES_USER" -d "$POSTGRES_DB" /tmp/eventlens-backup.dump'
 ```
 
-Apply migrations required by the deployed revision, restart the application,
-and check readiness and sign-in. Backup and restore commands are operator
-procedures; routine verification does not exercise them. Email password
-recovery and an operator password reset workflow are not implemented.
+Use a fresh, isolated queue namespace after database restoration so queued
+receipt IDs from a different database history cannot collide. Set the same new
+EVENTLENS_QUEUE_PREFIX for restarted workers. Apply required migrations, restart
+services, check health/sign-in, and watch pending work drain. Routine verification
+does not prove backup restoration; rehearse this separately.
 
-## Verification and upgrades
+## Verification, benchmarks, and upgrades
 
-Run the complete verification entry point against the development environment:
+The shared entry point is:
 
 ```sh
 pnpm verify
 ```
 
-The script performs setup, database preparation, checks, tests, and builds in
-order. Do not point test verification at a production database. Before an
-upgrade, review migrations, take a backup, verify the target revision in an
-isolated environment, and plan restoration for failures. Analytics benchmarks
-start when the event pipeline exists; Phase 1 has no workload benchmark results.
+It performs required setup, checks, tests, builds, and the applicable synthetic
+ingestion benchmark in order. The owner executes Docker, database operations, full
+runtime checks, and benchmarks. Never point verification at production.
+
+Standalone ingestion measurement requires an explicitly selected disposable
+project and BENCHMARK_API_URL/BENCHMARK_PROJECT_KEY; an optional output path saves
+the report. Acceptance measurements cover the PostgreSQL acknowledgement path.
+They do not establish end-to-end worker latency or production capacity.
+
+Before upgrading, review migrations, take a backup, verify the revision in an
+isolated environment, and plan restore. Keep receipt tombstones/backups in your
+retention policy: analytics cleanup does not implement complete actor erasure.
+Password recovery and full production application packaging remain later work.

@@ -7,9 +7,10 @@ export default function EventsPage({
 }: {
   params: Promise<{ workspaceId: string; projectId: string }>;
 }) {
+  const ids = use(params);
   return (
     <DashboardShell>
-      <EventExplorer {...use(params)} />
+      <EventExplorer key={ids.projectId} {...ids} />
     </DashboardShell>
   );
 }

@@ -172,11 +172,14 @@ function ProjectSettings({
                 ))}
             </Card>
             <Card className="border-dashed bg-transparent">
-              <h2 className="font-semibold">Ready for tracking</h2>
+              <h2 className="font-semibold">Explore your events</h2>
               <p className="muted mt-2">
-                Your project is set up. Event collection and analytics arrive in
-                the next implementation phase.
+                Send events with the SDK, then inspect activity and delivery
+                status in the event explorer.
               </p>
+              <Button asChild className="mt-4">
+                <Link href={`${path}/events`}>Open event explorer</Link>
+              </Button>
             </Card>
           </div>
         )

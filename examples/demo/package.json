@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3003",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "node --env-file=../../.env --import tsx src/seed.ts"
   },
   "dependencies": {
     "@eventlens/sdk": "workspace:*"

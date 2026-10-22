@@ -109,6 +109,3 @@ element('optout').addEventListener('change', () => {
     ? 'Tracking is disabled and queued events were cleared.'
     : 'Tracking enabled with a fresh anonymous ID.';
 });
-window.addEventListener('pagehide', () => {
-  /* The SDK performs its own best-effort shutdown flush. */
-});

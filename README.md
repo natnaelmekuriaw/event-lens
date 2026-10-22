@@ -85,3 +85,7 @@ and [security notes](SECURITY.md).
 ## License
 
 [MIT](LICENSE), copyright 2026 Natnael Mekuriaw.
+
+For a locally installed browser, set `PLAYWRIGHT_CHANNEL=chrome` or `msedge`
+in your environment or local `.env`. Verification then uses that browser instead
+of downloading Chromium.

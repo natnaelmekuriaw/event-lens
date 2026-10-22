@@ -31,7 +31,7 @@ export async function createApp() {
     },
   );
   app.setGlobalPrefix('api');
-  const server = app.getHttpAdapter().getInstance<express.Express>();
+  const server = app.getHttpAdapter().getInstance() as express.Express;
   server.all('/api/auth/{*path}', toNodeHandler(app.get(AuthService).auth));
   app.use(express.json({ limit: '32kb', strict: true }));
   app.useGlobalFilters(new ApiExceptionFilter());

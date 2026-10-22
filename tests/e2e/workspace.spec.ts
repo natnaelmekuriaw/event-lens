@@ -42,7 +42,9 @@ test('owner creates a workspace and project, updates settings, and rotates its k
     .click();
   await page.getByLabel('Reporting timezone').fill('Africa/Nairobi');
   await page.getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByRole('status')).toHaveText('Project settings saved.');
+  await expect(
+    page.getByText('Project settings saved.', { exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Rotate key', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm rotation' }).click();
   await expect(

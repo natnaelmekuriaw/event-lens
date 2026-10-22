@@ -32,12 +32,10 @@ export function createAbuseLimiter(
         if (value.expiresAt <= time) counters.delete(id);
       if (counters.size >= capacity && !counters.has(key)) {
         response.setHeader('Retry-After', '60');
-        response
-          .status(429)
-          .json({
-            code: 'RATE_LIMITED',
-            message: 'Too many requests. Try again shortly.',
-          });
+        response.status(429).json({
+          code: 'RATE_LIMITED',
+          message: 'Too many requests. Try again shortly.',
+        });
         return;
       }
       counter = { count: 0, expiresAt: time + windowMs };
@@ -49,12 +47,10 @@ export function createAbuseLimiter(
         'Retry-After',
         String(Math.max(1, Math.ceil((counter.expiresAt - time) / 1000))),
       );
-      response
-        .status(429)
-        .json({
-          code: 'RATE_LIMITED',
-          message: 'Too many requests. Try again shortly.',
-        });
+      response.status(429).json({
+        code: 'RATE_LIMITED',
+        message: 'Too many requests. Try again shortly.',
+      });
       return;
     }
     next();

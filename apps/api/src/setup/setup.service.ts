@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { setupSchema } from '@eventlens/contracts';
+import type { setupSchema } from '@eventlens/contracts';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { z } from 'zod';
 import { CONFIG, type Config } from '../config.js';

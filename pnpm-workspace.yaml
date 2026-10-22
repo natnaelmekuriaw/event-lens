@@ -2,11 +2,12 @@ packages:
   - apps/*
   - packages/*
 minimumReleaseAge: 1440
-onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@prisma/client'
-  - '@prisma/engines'
-  - '@tailwindcss/oxide'
-  - esbuild
-  - prisma
-  - sharp
+allowBuilds:
+  '@nestjs/core': false
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  '@tailwindcss/oxide': true
+  esbuild: true
+  prisma: true
+  sharp: true

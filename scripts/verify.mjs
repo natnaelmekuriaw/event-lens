@@ -87,6 +87,13 @@ async function verify() {
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL is required in .env.');
     }
+    const browserChannel = process.env.PLAYWRIGHT_CHANNEL;
+    if (
+      browserChannel !== undefined &&
+      !['chrome', 'msedge'].includes(browserChannel)
+    ) {
+      throw new Error('PLAYWRIGHT_CHANNEL must be chrome or msedge when set.');
+    }
 
     progress('Start PostgreSQL and wait for its health check');
     await run('docker', ['compose', 'up', '-d', '--wait', 'postgres']);
@@ -164,14 +171,18 @@ async function verify() {
     await pnpm(['db:migrate'], testEnv);
     progress('Run integration tests and seed the isolated test owner');
     await pnpm(['test:integration'], testEnv);
-    progress('Install Chromium and applicable browser dependencies');
-    await pnpm([
-      'exec',
-      'playwright',
-      'install',
-      ...(process.platform === 'linux' ? ['--with-deps'] : []),
-      'chromium',
-    ]);
+    if (browserChannel) {
+      progress(`Use installed ${browserChannel} for browser verification`);
+    } else {
+      progress('Install Chromium and applicable browser dependencies');
+      await pnpm([
+        'exec',
+        'playwright',
+        'install',
+        ...(process.platform === 'linux' ? ['--with-deps'] : []),
+        'chromium',
+      ]);
+    }
     progress('Run the browser workflow against the isolated database');
     await pnpm(['test:e2e'], testEnv);
   } catch (error) {

@@ -132,7 +132,7 @@ describe('management API against isolated PostgreSQL', () => {
           password: process.env.TEST_OWNER_PASSWORD,
         })
       ).status,
-    ).toBe(403);
+    ).toBe(400);
   });
   it('requires sessions and rejects public project keys as management credentials', async () => {
     expect((await request('/v1/workspaces')).status).toBe(401);

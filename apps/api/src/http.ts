@@ -5,7 +5,7 @@ import {
   type ExceptionFilter,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -42,20 +42,18 @@ export class ApiExceptionFilter implements ExceptionFilter {
       typeof body === 'object' && body !== null
         ? (body as Record<string, unknown>)
         : {};
-    response
-      .status(status)
-      .json({
-        code: detail.code ?? `HTTP_${status}`,
-        message:
-          status >= 500
-            ? 'The request could not be completed'
-            : (detail.message ??
-              (parserStatus === 413
-                ? 'Request body is too large'
-                : parserStatus === 400
-                  ? 'Invalid JSON body'
-                  : String(body))),
-        requestId: response.getHeader('x-request-id'),
-      });
+    response.status(status).json({
+      code: detail.code ?? `HTTP_${status}`,
+      message:
+        status >= 500
+          ? 'The request could not be completed'
+          : (detail.message ??
+            (parserStatus === 413
+              ? 'Request body is too large'
+              : parserStatus === 400
+                ? 'Invalid JSON body'
+                : String(body))),
+      requestId: response.getHeader('x-request-id'),
+    });
   }
 }

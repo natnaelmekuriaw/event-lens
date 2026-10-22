@@ -6,7 +6,6 @@ const environmentFile = new URL('../../.env', import.meta.url);
 if (existsSync(environmentFile)) loadEnvFile(environmentFile);
 
 const config: NextConfig = {
-  output: 'standalone',
   poweredByHeader: false,
   async rewrites() {
     return [

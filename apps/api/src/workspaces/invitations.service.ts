@@ -77,7 +77,7 @@ export class InvitationsService {
     });
   }
   async accept(
-    input: { token: string; name: string; password?: string },
+    input: { token: string; name: string; password?: string | undefined },
     signedInUser?: AuthenticatedUser,
   ) {
     const tokenHash = hashKey(input.token);

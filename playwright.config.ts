@@ -9,6 +9,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'retain-on-failure',
+    ...(process.env.PLAYWRIGHT_CHANNEL
+      ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+      : {}),
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -22,7 +25,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter @eventlens/web start',
-      env: { NODE_ENV: 'production' },
+      env: { NODE_ENV: 'production', PORT: '3000' },
       url: 'http://localhost:3000/login',
       reuseExistingServer: false,
       timeout: 60000,

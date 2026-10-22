@@ -37,25 +37,24 @@ export async function processReceipt(
         ],
         skipDuplicates: true,
       });
-      const link = await tx.identityLink.findUniqueOrThrow({
+    }
+    // Retention skips this row until the event and its association commit.
+    const links = await tx.$queryRaw<
+      { userId: string }[]
+    >`SELECT "userId" FROM "IdentityLink" WHERE "projectId" = ${receipt.projectId}::uuid AND "anonymousId" = ${event.anonymousId} FOR UPDATE`;
+    const link = links[0];
+    if (event.userId && !link) throw new Error('IDENTITY_LINK_UNAVAILABLE');
+    if (link) {
+      conflict = identityConflict(link.userId, event.userId);
+      await tx.identityLink.update({
         where: {
           projectId_anonymousId: {
             projectId: receipt.projectId,
             anonymousId: event.anonymousId,
           },
         },
+        data: { updatedAt: new Date() },
       });
-      conflict = identityConflict(link.userId, event.userId);
-      if (!conflict)
-        await tx.identityLink.update({
-          where: {
-            projectId_anonymousId: {
-              projectId: receipt.projectId,
-              anonymousId: event.anonymousId,
-            },
-          },
-          data: { updatedAt: new Date() },
-        });
     }
     await tx.analyticsEvent.createMany({
       data: [

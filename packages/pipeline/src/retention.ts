@@ -35,7 +35,7 @@ export async function cleanupEvents(
         errorCode: 'PAYLOAD_EXPIRED',
       },
     });
-    await tx.$executeRaw`DELETE FROM "IdentityLink" WHERE ("projectId", "anonymousId") IN (SELECT l."projectId", l."anonymousId" FROM "IdentityLink" l WHERE l."updatedAt" < ${cutoff} AND NOT EXISTS (SELECT 1 FROM "AnalyticsEvent" e WHERE e."projectId" = l."projectId" AND e."anonymousId" = l."anonymousId") LIMIT 1000)`;
+    await tx.$executeRaw`DELETE FROM "IdentityLink" WHERE ("projectId", "anonymousId") IN (SELECT l."projectId", l."anonymousId" FROM "IdentityLink" l WHERE l."updatedAt" < ${cutoff} AND NOT EXISTS (SELECT 1 FROM "AnalyticsEvent" e WHERE e."projectId" = l."projectId" AND e."anonymousId" = l."anonymousId") LIMIT 1000 FOR UPDATE OF l SKIP LOCKED)`;
     return { deletedEvents: deleted.count, expiredFailures: ids.length };
   });
 }

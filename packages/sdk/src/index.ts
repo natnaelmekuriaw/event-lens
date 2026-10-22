@@ -110,6 +110,8 @@ export function createEventLens(options: EventLensOptions): EventLens {
   let active: Promise<void> | undefined;
   let controller: AbortController | undefined;
   let inFlightCount = 0;
+  let deliveryGeneration = 0;
+  let cancelBackoff: (() => void) | undefined;
   const send = options.fetch ?? globalThis.fetch.bind(globalThis);
   const report = (
     code: Parameters<NonNullable<EventLensOptions['onError']>>[0],
@@ -139,27 +141,38 @@ export function createEventLens(options: EventLensOptions): EventLens {
       report('BUFFER_FULL');
       return false;
     }
-    const parsed = eventSchema.safeParse({
-      eventId: globalThis.crypto.randomUUID(),
-      type,
-      name,
-      occurredAt: new Date().toISOString(),
-      ...identity,
-      properties,
-    });
-    if (!parsed.success) {
-      report('INVALID_EVENT');
-      return false;
+    try {
+      const parsed = eventSchema.safeParse({
+        eventId: globalThis.crypto.randomUUID(),
+        type,
+        name,
+        occurredAt: new Date().toISOString(),
+        ...identity,
+        properties,
+      });
+      if (parsed.success) {
+        buffer.push(JSON.parse(JSON.stringify(parsed.data)) as TrackingEvent);
+        return true;
+      }
+    } catch {
+      // Caller objects may contain throwing getters or deny serialization.
     }
-    buffer.push(JSON.parse(JSON.stringify(parsed.data)) as TrackingEvent);
-    return true;
+    report('INVALID_EVENT');
+    return false;
   }
-  async function deliver(events: TrackingEvent[], keepalive: boolean) {
+  async function deliver(
+    events: TrackingEvent[],
+    keepalive: boolean,
+    generation: number,
+  ) {
+    const cancelled = () =>
+      optedOut || destroyed || generation !== deliveryGeneration;
     const body = JSON.stringify({ projectKey: options.projectKey, events });
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      if (optedOut || destroyed) return;
-      controller = new AbortController();
-      const timer = setTimeout(() => controller?.abort(), timeout);
+      if (cancelled()) return;
+      const request = new AbortController();
+      controller = request;
+      const timer = setTimeout(() => request.abort(), timeout);
       let status: number | null = null;
       let retryable = true;
       try {
@@ -168,7 +181,7 @@ export function createEventLens(options: EventLensOptions): EventLens {
           credentials: 'omit',
           headers: { 'Content-Type': 'application/json' },
           body,
-          signal: controller.signal,
+          signal: request.signal,
           keepalive,
         });
         status = response.status;
@@ -183,24 +196,37 @@ export function createEventLens(options: EventLensOptions): EventLens {
         clearTimeout(timer);
         controller = undefined;
       }
-      if (optedOut || destroyed) return;
+      if (cancelled()) return;
       if (!retryable || attempt === maxRetries) throw new DeliveryError(status);
-      await new Promise((resolve) =>
-        setTimeout(
-          resolve,
+      await new Promise<void>((resolve) => {
+        const finish = () => {
+          clearTimeout(timer);
+          cancelBackoff = undefined;
+          resolve();
+        };
+        const timer = setTimeout(
+          finish,
           Math.min(30000, 1000 * 2 ** attempt) +
             Math.floor(Math.random() * 250),
-        ),
-      );
+        );
+        cancelBackoff = finish;
+      });
     }
   }
   function flush(keepalive = false): Promise<void> {
     if (active) return active;
     if (destroyed || optedOut || !buffer.length) return Promise.resolve();
     const target = buffer.length;
+    const generation = deliveryGeneration;
     active = (async () => {
       let remaining = target;
-      while (remaining > 0 && buffer.length && !optedOut && !destroyed) {
+      while (
+        remaining > 0 &&
+        buffer.length &&
+        !optedOut &&
+        !destroyed &&
+        generation === deliveryGeneration
+      ) {
         let count = Math.min(batchSize, remaining, buffer.length);
         while (
           count > 1 &&
@@ -216,7 +242,7 @@ export function createEventLens(options: EventLensOptions): EventLens {
         remaining -= batch.length;
         inFlightCount = batch.length;
         try {
-          await deliver(batch, keepalive);
+          await deliver(batch, keepalive, generation);
         } catch (error) {
           report('DELIVERY_FAILED');
           throw error;
@@ -272,11 +298,14 @@ export function createEventLens(options: EventLensOptions): EventLens {
     },
     flush: () => flush(),
     setOptOut(value) {
+      if (value === optedOut) return;
       optedOut = value;
       writeStorage(storage, storageKey + ':optout', value ? '1' : null);
       if (value) {
         buffer = [];
+        deliveryGeneration++;
         controller?.abort();
+        cancelBackoff?.();
       }
       identity = { anonymousId: anonymousId() };
       persist();
@@ -287,8 +316,10 @@ export function createEventLens(options: EventLensOptions): EventLens {
     },
     destroy() {
       destroyed = true;
+      deliveryGeneration++;
       buffer = [];
       controller?.abort();
+      cancelBackoff?.();
       if (timer) clearInterval(timer);
       if (runtime === 'browser' && typeof window !== 'undefined') {
         window.removeEventListener('pagehide', shutdownFlush);

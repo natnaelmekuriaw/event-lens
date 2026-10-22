@@ -87,7 +87,7 @@ export class WorkerRuntime implements OnModuleInit, OnModuleDestroy {
       ),
     );
     this.timer = setInterval(() => {
-      this.current = this.tick();
+      if (!this.running) this.current = this.tick();
     }, 1000);
     this.current = this.tick();
   }
@@ -117,7 +117,7 @@ export class WorkerRuntime implements OnModuleInit, OnModuleDestroy {
     if (this.stopping || Date.now() - this.lastDispatchAt > 60000)
       throw new Error('DISPATCH_STALE');
     await this.db.$queryRaw`SELECT 1`;
-    await (await this.queue.client).ping();
+    await this.queue.getJobCounts('waiting', 'active', 'failed');
     return { status: 'ok', database: 'ready', queue: 'ready' };
   }
   async onModuleDestroy() {

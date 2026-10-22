@@ -22,11 +22,9 @@ export async function cleanupEvents(
     const deleted = await tx.analyticsEvent.deleteMany({
       where: { id: { in: events.map((row) => row.id) } },
     });
-    const failed = await tx.eventReceipt.findMany({
-      where: { status: 'failed', failedAt: { lt: failedCutoff } },
-      select: { id: true },
-      take: 1000,
-    });
+    const failed = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM "EventReceipt" WHERE status = 'failed' AND "failedAt" < ${failedCutoff} LIMIT 1000 FOR UPDATE SKIP LOCKED`;
     const ids = failed.map((row) => row.id);
     await tx.eventOutbox.deleteMany({ where: { receiptId: { in: ids } } });
     await tx.eventReceipt.updateMany({

@@ -23,9 +23,9 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!['http:', 'https:'].includes(url.protocol) || url.pathname !== '/' || url.search || url.hash || url.username || url.password) {
       throw new Error(`${field} must be an HTTP origin without credentials, path, or query`);
     }
-    if (parsed.data.NODE_ENV === 'production' && url.protocol !== 'https:') throw new Error(`${field} must use HTTPS in production`);
+    if (field === 'APP_URL' && parsed.data.NODE_ENV === 'production' && url.protocol !== 'https:') throw new Error(`${field} must use HTTPS in production`);
   }
-  return parsed.data;
+  return { ...parsed.data, APP_URL: new URL(parsed.data.APP_URL).origin, API_URL: new URL(parsed.data.API_URL).origin };
 }
 
 export const CONFIG = Symbol('CONFIG');

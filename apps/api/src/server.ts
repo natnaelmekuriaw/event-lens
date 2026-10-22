@@ -9,12 +9,14 @@ import { AppModule } from './app.module.js';
 import { AuthService } from './auth/auth.service.js';
 import { ApiExceptionFilter } from './http.js';
 import { httpLogger } from './logger.js';
+import { createAbuseLimiter } from './security.js';
 
 export async function createApp() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false, logger: ['error', 'warn'] });
   app.disable('x-powered-by');
   app.use(httpLogger);
   app.use(helmet());
+  app.use(createAbuseLimiter());
   app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   app.setGlobalPrefix('api');
   const server = app.getHttpAdapter().getInstance<express.Express>();

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=22.13.0 <23 || >=24.0.0" },
+  "engines": {
+    "node": ">=22.13.0 <23 || >=24.0.0"
+  },
   "scripts": {
     "dev": "pnpm --parallel --filter @eventlens/api --filter @eventlens/web dev",
     "build": "pnpm -r build",
@@ -21,17 +23,19 @@
     "setup": "node scripts/setup.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.5",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
     "@types/express": "5.0.6",
     "@types/node": "22.20.5",
     "@types/pg": "8.23.1",
-    "eslint": "9.39.5",
+    "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.0",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "@eventlens/contracts": "workspace:*",
+    "@eventlens/database": "workspace:*"
   }
 }

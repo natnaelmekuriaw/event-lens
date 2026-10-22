@@ -1,12 +1,56 @@
 @import 'tailwindcss';
 
-:root { color-scheme: light; --background: #f6f7f4; --foreground: #202821; }
-body { margin: 0; background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
-button, a, input, select { -webkit-tap-highlight-color: transparent; }
-button:not(:disabled), select { cursor: pointer; }
-a, button, input, select { scroll-margin-top: 1rem; }
-::selection { background: #d1fae5; }
-.field { display: grid; gap: .5rem; font-size: .875rem; font-weight: 500; }
-.muted { color: #687068; font-size: .875rem; line-height: 1.6; }
-.select { height: 2.75rem; border: 1px solid #d6d3d1; border-radius: .5rem; background: white; padding: 0 .75rem; font-size: .875rem; }
-.page-title { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 600; letter-spacing: -.04em; }
+:root {
+  color-scheme: light;
+  --background: #f6f7f4;
+  --foreground: #202821;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+a,
+button,
+input,
+select {
+  scroll-margin-top: 1rem;
+}
+::selection {
+  background: #d1fae5;
+}
+.field {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.muted {
+  color: #687068;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.select {
+  height: 2.75rem;
+  border: 1px solid #d6d3d1;
+  border-radius: 0.5rem;
+  background: white;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+}
+.page-title {
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}

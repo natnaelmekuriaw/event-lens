@@ -9,20 +9,44 @@ import { AppModule } from './app.module.js';
 import { AuthService } from './auth/auth.service.js';
 import { ApiExceptionFilter } from './http.js';
 import { httpLogger } from './logger.js';
+import { createAbuseLimiter } from './security.js';
 
 export async function createApp() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false, logger: ['error', 'warn'] });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+    logger: ['error', 'warn'],
+  });
   app.disable('x-powered-by');
   app.use(httpLogger);
   app.use(helmet());
-  app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+  app.use(createAbuseLimiter());
+  app.use(
+    (
+      _req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
+      res.setHeader('Cache-Control', 'no-store');
+      next();
+    },
+  );
   app.setGlobalPrefix('api');
-  const server = app.getHttpAdapter().getInstance<express.Express>();
+  const server = app.getHttpAdapter().getInstance() as express.Express;
   server.all('/api/auth/{*path}', toNodeHandler(app.get(AuthService).auth));
   app.use(express.json({ limit: '32kb', strict: true }));
   app.useGlobalFilters(new ApiExceptionFilter());
   app.enableShutdownHooks();
-  const document = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('EventLens API').setDescription('Phase 1 account, workspace, and project management. Requires a session cookie; public project keys grant no management access.').setVersion('0.1.0').addCookieAuth('better-auth.session_token').build());
+  const document = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('EventLens API')
+      .setDescription(
+        'Phase 1 account, workspace, and project management. Requires a session cookie; public project keys grant no management access.',
+      )
+      .setVersion('0.1.0')
+      .addCookieAuth('better-auth.session_token')
+      .build(),
+  );
   SwaggerModule.setup('api/docs', app, document);
   await app.init();
   return app;

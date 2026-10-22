@@ -7,6 +7,7 @@ import './style.css';
 const element = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 let analytics: EventLens | undefined;
+let delivery = Promise.resolve();
 let level = 1;
 let score = 0;
 let playing = false;
@@ -23,7 +24,8 @@ function state() {
 }
 async function track(name: string, properties: Properties = {}) {
   if (!analytics) return;
-  const accepted = analytics.track(name, {
+  const current = analytics;
+  const accepted = current.track(name, {
     ...properties,
     platform: 'demo-browser',
   });
@@ -34,16 +36,24 @@ async function track(name: string, properties: Properties = {}) {
   element('activity').prepend(row);
   while (element('activity').children.length > 10)
     element('activity').lastElementChild?.remove();
-  try {
-    await analytics.flush();
-    element('delivery').textContent = accepted
-      ? 'Batch accepted. Check the EventLens explorer.'
-      : 'No event sent.';
-  } catch {
-    element('delivery').textContent =
-      'Delivery failed. Check the API endpoint and project key.';
-  }
+  delivery = delivery.then(async () => {
+    if (current !== analytics) return;
+    try {
+      await current.flush();
+      if (current !== analytics) return;
+      element('delivery').textContent =
+        accepted && !element<HTMLInputElement>('optout').checked
+          ? 'Batch accepted. Check the EventLens explorer.'
+          : 'No event sent.';
+    } catch {
+      if (current === analytics)
+        element('delivery').textContent =
+          'Delivery failed. Check the API endpoint and project key.';
+    }
+  });
+  await delivery;
 }
+
 element('connect').addEventListener('submit', (event) => {
   event.preventDefault();
   analytics?.destroy();

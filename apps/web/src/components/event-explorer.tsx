@@ -30,6 +30,7 @@ export function EventExplorer({
     `/workspaces/${workspaceId}/projects?limit=100`,
   );
   const [filters, setFilters] = useState('');
+  const [filterError, setFilterError] = useState<string | null>(null);
   const [cursors, setCursors] = useState<string[]>([]);
   const [live, setLive] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -49,15 +50,24 @@ export function EventExplorer({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const query = new URLSearchParams();
-    for (const key of ['name', 'actor', 'from', 'to']) {
-      const value = String(form.get(key) ?? '').trim();
-      if (value)
-        query.set(
-          key,
-          key === 'from' || key === 'to'
-            ? new Date(value + 'Z').toISOString()
-            : value,
-        );
+    setFilterError(null);
+    try {
+      for (const key of ['name', 'actor', 'from', 'to']) {
+        const value = String(form.get(key) ?? '').trim();
+        if (value)
+          query.set(
+            key,
+            key === 'from' || key === 'to'
+              ? new Date(value + 'Z').toISOString()
+              : value,
+          );
+      }
+      const from = query.get('from');
+      const to = query.get('to');
+      if (from && to && Date.parse(from) > Date.parse(to)) throw new Error();
+    } catch {
+      setFilterError('Enter valid UTC times with From before To.');
+      return;
     }
     setFilters(query.toString());
     setCursors([]);
@@ -109,7 +119,11 @@ export function EventExplorer({
       </div>
       <FormMessage
         error={
-          project.error ?? workspace.error ?? projects.error ?? events.error
+          filterError ??
+          project.error ??
+          workspace.error ??
+          projects.error ??
+          events.error
         }
       />
       <ProcessingStatus

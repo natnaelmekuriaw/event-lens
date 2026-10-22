@@ -6,7 +6,7 @@ export default tseslint.config(
   { ignores: ['**/dist/**', '**/.next/**', '**/node_modules/**', '**/generated/**', '**/next-env.d.ts', 'coverage/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  { files: ['**/*.{js,mjs}'], languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly', setTimeout: 'readonly', Buffer: 'readonly', AbortSignal: 'readonly' } } },
+  { files: ['**/*.{js,mjs}'], languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly', setTimeout: 'readonly', Buffer: 'readonly', AbortSignal: 'readonly', AggregateError: 'readonly' } } },
   { files: ['**/*.{ts,tsx}'], rules: { '@typescript-eslint/consistent-type-imports': 'error', '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }] } },
   prettier,
 );

@@ -126,7 +126,10 @@ export const eventQuerySchema = z
     to: z.iso.datetime({ offset: true }).optional(),
   })
   .strict()
-  .refine((q) => !q.from || !q.to || q.from <= q.to, 'from must precede to');
+  .refine(
+    (q) => !q.from || !q.to || Date.parse(q.from) <= Date.parse(q.to),
+    'from must precede to',
+  );
 export type EventQuery = z.infer<typeof eventQuerySchema>;
 export interface ProcessingSummary {
   pending: number;

@@ -20,6 +20,7 @@ export async function createApp() {
   app.disable('x-powered-by');
   app.use(httpLogger);
   app.use(helmet());
+  app.use('/api/v1/ingest', ...ingestionHttp());
   app.use(createAbuseLimiter());
   app.use(
     (
@@ -34,7 +35,6 @@ export async function createApp() {
   app.setGlobalPrefix('api');
   const server = app.getHttpAdapter().getInstance() as express.Express;
   server.all('/api/auth/{*path}', toNodeHandler(app.get(AuthService).auth));
-  app.use('/api/v1/ingest', ...ingestionHttp());
   app.use(express.json({ limit: '32kb', strict: true }));
   app.useGlobalFilters(new ApiExceptionFilter());
   app.enableShutdownHooks();

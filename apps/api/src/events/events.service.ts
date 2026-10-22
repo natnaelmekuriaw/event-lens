@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@eventlens/database';
+import type { Prisma } from '@eventlens/database';
 import type {
   EventQuery,
   StoredEvent,

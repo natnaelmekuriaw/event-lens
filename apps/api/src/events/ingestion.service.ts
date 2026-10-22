@@ -40,11 +40,12 @@ export class IngestionService {
       if (!project)
         throw new UnauthorizedException('Invalid public project key');
       this.limiter.consume(project.id, input.events.length);
-      const unique = [
-        ...new Map(
-          input.events.map((event) => [event.eventId, event]),
-        ).values(),
-      ];
+      const first = new Map<string, (typeof input.events)[number]>();
+      for (const event of input.events)
+        if (!first.has(event.eventId)) first.set(event.eventId, event);
+      const unique = [...first.values()].sort((a, b) =>
+        a.eventId.localeCompare(b.eventId),
+      );
       const created = await tx.eventReceipt.createManyAndReturn({
         data: unique.map((event) => ({
           projectId: project.id,

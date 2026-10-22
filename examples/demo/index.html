@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GalaxyBalls · EventLens demo</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">EventLens / Synthetic demo</span>
+        <h1>GalaxyBalls</h1>
+        <p>A tiny game journey you can follow in your event explorer.</p>
+      </header>
+      <section class="panel">
+        <h2>Connect your project</h2>
+        <form id="connect">
+          <label
+            >API endpoint<input
+              id="endpoint"
+              type="url"
+              value="http://localhost:3001"
+              required /></label
+          ><label
+            >Public project key<input
+              id="project-key"
+              placeholder="el_pk_…"
+              required
+              autocomplete="off" /></label
+          ><button>Connect analytics</button>
+        </form>
+        <p id="connection" role="status">Enter a project key from EventLens.</p>
+      </section>
+      <div class="columns">
+        <section class="panel">
+          <div class="board" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <h2 id="game-state">Ready to play</h2>
+          <p id="score">Level 1 · Score 0</p>
+          <div class="actions">
+            <button id="start" disabled>Start game</button
+            ><button id="complete" disabled>Complete level</button
+            ><button id="over" disabled>Game over</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Player context</h2>
+          <label
+            >Synthetic user ID<input
+              id="user-id"
+              value="demo-player"
+              maxlength="200"
+          /></label>
+          <div class="actions">
+            <button id="identify" disabled>Identify player</button
+            ><button id="reset" disabled>Reset player</button>
+          </div>
+          <label class="check"
+            ><input type="checkbox" id="optout" />Opt out of tracking</label
+          >
+          <h2>Recent activity</h2>
+          <p id="delivery" role="status">No events sent.</p>
+          <ul id="activity" aria-live="polite"></ul>
+          <p class="note">
+            Uses synthetic events only. An accepted batch is durably stored; the
+            worker makes it visible in the explorer.
+          </p>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

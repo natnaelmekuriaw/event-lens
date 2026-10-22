@@ -1,0 +1,146 @@
+@import url('data:text/css,');
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #e7e9f5;
+  background: #111527;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1080px;
+  margin: auto;
+  padding: 48px 24px;
+}
+header {
+  margin-bottom: 32px;
+}
+.eyebrow {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #92a7d6;
+}
+h1 {
+  font-size: 48px;
+  letter-spacing: -0.05em;
+  margin: 14px 0;
+}
+p {
+  color: #aeb8d4;
+  line-height: 1.6;
+}
+h2 {
+  font-size: 18px;
+  margin: 0 0 20px;
+}
+.panel {
+  border: 1px solid #323b58;
+  border-radius: 18px;
+  padding: 28px;
+  background: #1a2036;
+  margin-bottom: 24px;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+form {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr auto;
+  gap: 16px;
+  align-items: end;
+}
+label {
+  display: grid;
+  gap: 9px;
+  font-size: 13px;
+  color: #c7d1e7;
+}
+input {
+  background: #11182a;
+  border: 1px solid #46516e;
+  border-radius: 8px;
+  padding: 12px;
+  color: white;
+  min-width: 0;
+}
+button {
+  background: #9bdac7;
+  border: 0;
+  border-radius: 8px;
+  padding: 13px 18px;
+  font-weight: 600;
+  color: #152b2a;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #bdc8ff;
+  outline-offset: 3px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+.check {
+  display: flex;
+  align-items: center;
+  margin: 20px 0 32px;
+}
+.note {
+  font-size: 12px;
+}
+ul {
+  padding-left: 18px;
+  color: #a8e8d1;
+  font: 12px/1.8 monospace;
+}
+.board {
+  height: 160px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, #353d66, #10162b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.board i {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #a7dfcc;
+  box-shadow: 0 0 24px #8fffd766;
+}
+.board i:nth-child(2n) {
+  background: #a6b3f4;
+  transform: translateY(25px);
+}
+.board i:nth-child(3n) {
+  background: #edb0c6;
+  transform: translateY(-20px);
+}
+@media (max-width: 760px) {
+  .columns,
+  form {
+    grid-template-columns: 1fr;
+  }
+  main {
+    padding: 24px 16px;
+  }
+  .panel {
+    padding: 20px;
+  }
+}

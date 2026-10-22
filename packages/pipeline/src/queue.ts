@@ -1,5 +1,11 @@
 import { Queue } from 'bullmq';
 export const QUEUE_NAME = 'eventlens-events';
+export function queuePrefix(): string {
+  const value = process.env.EVENTLENS_QUEUE_PREFIX ?? 'eventlens';
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(value))
+    throw new Error('Invalid EVENTLENS_QUEUE_PREFIX');
+  return value;
+}
 export const MAX_ATTEMPTS = 5;
 export function redisConnection(url: string, blocking = false) {
   const parsed = new URL(url);
@@ -25,6 +31,7 @@ export function redisConnection(url: string, blocking = false) {
 }
 export function eventQueue(redisUrl: string) {
   return new Queue(QUEUE_NAME, {
+    prefix: queuePrefix(),
     connection: redisConnection(redisUrl),
     defaultJobOptions: {
       attempts: MAX_ATTEMPTS,

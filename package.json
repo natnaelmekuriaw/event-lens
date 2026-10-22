@@ -8,7 +8,7 @@
     "node": ">=22.13.0 <23 || >=24.0.0"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @eventlens/api --filter @eventlens/web dev",
+    "dev": "pnpm --parallel --filter @eventlens/api --filter @eventlens/web --filter @eventlens/worker dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . --max-warnings=0",
@@ -20,7 +20,8 @@
     "db:generate": "pnpm --filter @eventlens/database generate",
     "db:migrate": "pnpm --filter @eventlens/database migrate",
     "verify": "node scripts/verify.mjs",
-    "setup": "node scripts/setup.mjs"
+    "setup": "node scripts/setup.mjs",
+    "demo": "pnpm --filter @eventlens/demo dev"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

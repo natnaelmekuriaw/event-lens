@@ -11,3 +11,4 @@ test-results/
 *.tsbuildinfo
 packages/database/src/generated/
 *.log
+*.dump

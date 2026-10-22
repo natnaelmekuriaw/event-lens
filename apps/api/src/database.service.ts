@@ -5,6 +5,10 @@ import { CONFIG, type Config } from './config.js';
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   readonly client;
-  constructor(@Inject(CONFIG) config: Config) { this.client = createDatabase(config.DATABASE_URL); }
-  async onModuleDestroy() { await this.client.$disconnect(); }
+  constructor(@Inject(CONFIG) config: Config) {
+    this.client = createDatabase(config.DATABASE_URL);
+  }
+  async onModuleDestroy() {
+    await this.client.$disconnect();
+  }
 }

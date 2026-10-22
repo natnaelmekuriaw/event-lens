@@ -15,10 +15,33 @@ import { ProjectsController } from './projects/projects.controller.js';
 import { MembersService } from './workspaces/members.service.js';
 import { MembersController } from './workspaces/members.controller.js';
 import { InvitationsService } from './workspaces/invitations.service.js';
-import { AcceptInvitationController, InvitationsController } from './workspaces/invitations.controller.js';
+import {
+  AcceptInvitationController,
+  InvitationsController,
+} from './workspaces/invitations.controller.js';
 
 @Module({
-  controllers: [HealthController, SetupController, WorkspacesController, ProjectsController, MembersController, InvitationsController, AcceptInvitationController],
-  providers: [{ provide: CONFIG, useFactory: () => readConfig() }, DatabaseService, AuthService, SessionGuard, OriginGuard, SetupService, AccessService, WorkspacesService, ProjectsService, MembersService, InvitationsService],
+  controllers: [
+    HealthController,
+    SetupController,
+    WorkspacesController,
+    ProjectsController,
+    MembersController,
+    InvitationsController,
+    AcceptInvitationController,
+  ],
+  providers: [
+    { provide: CONFIG, useFactory: () => readConfig() },
+    DatabaseService,
+    AuthService,
+    SessionGuard,
+    OriginGuard,
+    SetupService,
+    AccessService,
+    WorkspacesService,
+    ProjectsService,
+    MembersService,
+    InvitationsService,
+  ],
 })
 export class AppModule {}

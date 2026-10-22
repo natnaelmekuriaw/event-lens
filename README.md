@@ -69,14 +69,14 @@ later event and analytics phases.
 
 ## Repository guide
 
-| Path | Responsibility |
-| --- | --- |
-| `apps/web` | Next.js dashboard and same-origin API proxy |
-| `apps/api` | NestJS API, sessions, access control, workspaces, and projects |
-| `packages/contracts` | Request validation and shared response types |
-| `packages/database` | Prisma schema, migrations, and PostgreSQL client |
-| `scripts/verify.mjs` | Shared local and CI verification sequence |
-| `docs` | Architecture, decisions, deployment guidance, and phase plan |
+| Path                 | Responsibility                                                 |
+| -------------------- | -------------------------------------------------------------- |
+| `apps/web`           | Next.js dashboard and same-origin API proxy                    |
+| `apps/api`           | NestJS API, sessions, access control, workspaces, and projects |
+| `packages/contracts` | Request validation and shared response types                   |
+| `packages/database`  | Prisma schema, migrations, and PostgreSQL client               |
+| `scripts/verify.mjs` | Shared local and CI verification sequence                      |
+| `docs`               | Architecture, decisions, deployment guidance, and phase plan   |
 
 Read the [phase plan](docs/plan.md), [architecture](docs/architecture.md),
 [self-hosting guide](docs/self-hosting.md), [contribution rules](CONTRIBUTING.md),

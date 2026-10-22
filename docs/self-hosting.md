@@ -22,21 +22,20 @@ the same email replaces the old link.
 Use one API instance behind a private network boundary. Terminate public HTTPS
 at a reverse proxy that exposes the Next.js dashboard. Next.js forwards its
 `/api` requests to the private API. The API listens on all interfaces, so use
-firewall or container/network rules to prevent direct public access to port
-3001. Keep PostgreSQL private as well.
+firewall or container/network rules to prevent direct public access to port 3001. Keep PostgreSQL private as well.
 
 Set the following values for the deployment:
 
-| Variable | Purpose |
-| --- | --- |
-| `NODE_ENV` | `production` |
-| `APP_URL` | Exact public HTTPS dashboard origin, without credentials, path, or query |
-| `API_URL` | Private HTTP or HTTPS API origin reachable from Next.js |
-| `PORT` | API listener port, normally `3001` |
-| `DATABASE_URL` | PostgreSQL connection URL for the application |
-| `BETTER_AUTH_SECRET` | Unique random session secret of at least 32 characters |
-| `BOOTSTRAP_TOKEN` | Unique random initial-owner setup token of at least 32 characters |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | PostgreSQL container configuration when using the supplied Compose file |
+| Variable                                            | Purpose                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `NODE_ENV`                                          | `production`                                                             |
+| `APP_URL`                                           | Exact public HTTPS dashboard origin, without credentials, path, or query |
+| `API_URL`                                           | Private HTTP or HTTPS API origin reachable from Next.js                  |
+| `PORT`                                              | API listener port, normally `3001`                                       |
+| `DATABASE_URL`                                      | PostgreSQL connection URL for the application                            |
+| `BETTER_AUTH_SECRET`                                | Unique random session secret of at least 32 characters                   |
+| `BOOTSTRAP_TOKEN`                                   | Unique random initial-owner setup token of at least 32 characters        |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | PostgreSQL container configuration when using the supplied Compose file  |
 
 `APP_URL` must use HTTPS in production. It controls trusted origins and secure
 cookies, so use the exact address users open. Preserve the browser's origin at

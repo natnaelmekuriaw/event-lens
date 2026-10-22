@@ -59,17 +59,15 @@ async function verify() {
   if (realpathSync(process.cwd()) !== realpathSync(root)) {
     throw new Error('Run pnpm verify from the EventLens repository root.');
   }
-  if (
-    !pnpmPath ||
-    !/\.(?:c|m)?js$/i.test(pnpmPath) ||
-    !existsSync(pnpmPath)
-  ) {
+  if (!pnpmPath || !/\.(?:c|m)?js$/i.test(pnpmPath) || !existsSync(pnpmPath)) {
     throw new Error(
       'Run this script with pnpm verify using the Node.js installation of pnpm.',
     );
   }
   if (!existsSync(new URL('../pnpm-lock.yaml', import.meta.url))) {
-    throw new Error('The committed pnpm-lock.yaml is required for verification.');
+    throw new Error(
+      'The committed pnpm-lock.yaml is required for verification.',
+    );
   }
 
   const onInterrupt = () => stop('SIGINT');
@@ -108,6 +106,8 @@ async function verify() {
     await pnpm(['format:check']);
     progress('Check lint rules');
     await pnpm(['lint']);
+    progress('Generate Next.js route declarations');
+    await pnpm(['--filter', '@eventlens/web', 'exec', 'next', 'typegen']);
     progress('Check TypeScript across all workspaces');
     await pnpm(['typecheck']);
     progress('Run unit tests');
@@ -141,7 +141,9 @@ async function verify() {
       !/^eventlens_verify_[0-9]+_[0-9a-f]{12}$/.test(name) ||
       name.length > 63
     ) {
-      throw new Error('Refusing to create an invalid verification database name.');
+      throw new Error(
+        'Refusing to create an invalid verification database name.',
+      );
     }
     await admin.query(`CREATE DATABASE "${name}"`);
     createdDatabase = name;
@@ -192,16 +194,20 @@ async function verify() {
         await admin.end();
       } catch (error) {
         failures.push(
-          new Error('Failed to close the verification database connection pool', {
-            cause: error,
-          }),
+          new Error(
+            'Failed to close the verification database connection pool',
+            {
+              cause: error,
+            },
+          ),
         );
       }
     }
     process.removeListener('SIGINT', onInterrupt);
     process.removeListener('SIGTERM', onTerminate);
   }
-  if (failures.length) throw new AggregateError(failures, 'Verification failed');
+  if (failures.length)
+    throw new AggregateError(failures, 'Verification failed');
   console.log(
     '\nVerification passed. Benchmarks are deferred until the event pipeline and analytics phases.',
   );

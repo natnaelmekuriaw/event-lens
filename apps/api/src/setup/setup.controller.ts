@@ -8,6 +8,10 @@ import { SetupService } from './setup.service.js';
 @UseGuards(OriginGuard)
 export class SetupController {
   constructor(@Inject(SetupService) private readonly setup: SetupService) {}
-  @Get() status() { return this.setup.status(); }
-  @Post() initialize(@Body() body: unknown) { return this.setup.initialize(parse(setupSchema, body)); }
+  @Get() status() {
+    return this.setup.status();
+  }
+  @Post() initialize(@Body() body: unknown) {
+    return this.setup.initialize(parse(setupSchema, body));
+  }
 }

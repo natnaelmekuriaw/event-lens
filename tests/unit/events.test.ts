@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  eventQuerySchema,
   eventSchema,
   ingestionSchema,
   propertiesSchema,
@@ -16,6 +17,20 @@ const event = {
   properties: {},
 };
 describe('event boundaries', () => {
+  it('compares timestamp filters by instant across offsets', () => {
+    expect(
+      eventQuerySchema.safeParse({
+        from: '2026-10-22T12:00:00+03:00',
+        to: '2026-10-22T10:00:00Z',
+      }).success,
+    ).toBe(true);
+    expect(
+      eventQuerySchema.safeParse({
+        from: '2026-10-22T12:00:00Z',
+        to: '2026-10-22T13:00:00+03:00',
+      }).success,
+    ).toBe(false);
+  });
   it('rejects invalid identifiers and unknown fields', () => {
     expect(
       eventSchema.safeParse({ ...event, anonymousId: ' bad' }).success,

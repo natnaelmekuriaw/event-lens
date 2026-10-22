@@ -62,7 +62,12 @@ export const actorIdSchema = z
   .min(1)
   .max(200)
   .refine(
-    (v) => v.trim() === v && !/[\u0000-\u001f\u007f]/.test(v),
+    (value) =>
+      value.trim() === value &&
+      Array.from(value).every((character) => {
+        const code = character.charCodeAt(0);
+        return code >= 32 && (code < 127 || code > 159);
+      }),
     'Invalid actor identifier',
   );
 export const eventSchema = z

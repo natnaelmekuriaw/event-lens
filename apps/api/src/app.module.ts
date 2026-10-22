@@ -1,3 +1,5 @@
+import { EventsController } from './events/events.controller.js';
+import { EventsService } from './events/events.service.js';
 import { IngestionController } from './events/ingestion.controller.js';
 import { IngestionService } from './events/ingestion.service.js';
 import { Module } from '@nestjs/common';
@@ -26,6 +28,7 @@ import {
   controllers: [
     HealthController,
     IngestionController,
+    EventsController,
     SetupController,
     WorkspacesController,
     ProjectsController,
@@ -37,6 +40,7 @@ import {
     { provide: CONFIG, useFactory: () => readConfig() },
     DatabaseService,
     IngestionService,
+    EventsService,
     AuthService,
     SessionGuard,
     OriginGuard,

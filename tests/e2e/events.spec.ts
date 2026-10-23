@@ -161,7 +161,7 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
       .getByRole('table', { name: 'Conversion path results' })
       .getByRole('row', { name: /2\. level_completed/ }),
   ).toContainText('1');
-  await page.getByRole('link', { name: 'Analytics', exact: true }).click();
+  await page.getByRole('link', { name: '← Analytics', exact: true }).click();
   await page.getByRole('link', { name: 'Events', exact: true }).click();
   await demo.getByLabel('Opt out of tracking').check();
   const before = await page.request.get(

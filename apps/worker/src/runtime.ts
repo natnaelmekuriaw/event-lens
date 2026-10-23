@@ -13,6 +13,7 @@ import {
   QUEUE_NAME,
   queuePrefix,
   recordFailure,
+  reserveReceiptAttempt,
   redisConnection,
   type EventJob,
 } from '@eventlens/pipeline';
@@ -54,15 +55,19 @@ export class WorkerRuntime implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<EventJob>(
       QUEUE_NAME,
       async (job) => {
+        let attempt: number | null = null;
         try {
+          attempt = await reserveReceiptAttempt(this.db, job.data);
+          if (attempt === null) return;
           await processReceipt(this.db, job.data);
         } catch {
-          await recordFailure(
-            this.db,
-            job.data,
-            job.attemptsMade + 1,
-            job.attemptsMade + 1 >= MAX_ATTEMPTS,
-          );
+          if (attempt !== null)
+            await recordFailure(
+              this.db,
+              job.data,
+              attempt,
+              attempt >= MAX_ATTEMPTS,
+            );
           throw new Error('PROCESSING_FAILED');
         }
       },

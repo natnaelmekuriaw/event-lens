@@ -1,12 +1,46 @@
 import { Prisma, type PrismaClient } from '@eventlens/database';
 import { eventSchema } from '@eventlens/contracts';
-import type { EventJob } from './queue.js';
+import { MAX_ATTEMPTS, type EventJob } from './queue.js';
 
 export function identityConflict(
   linkedUser: string | undefined,
   suppliedUser: string | undefined,
 ): boolean {
   return Boolean(linkedUser && suppliedUser && linkedUser !== suppliedUser);
+}
+export async function reserveReceiptAttempt(
+  db: PrismaClient,
+  data: EventJob,
+): Promise<number | null> {
+  return db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "EventReceipt" WHERE id = ${data.receiptId}::uuid FOR UPDATE`;
+    const receipt = await tx.eventReceipt.findUnique({
+      where: { id: data.receiptId },
+    });
+    if (
+      !receipt ||
+      receipt.status !== 'pending' ||
+      receipt.generation !== data.generation
+    )
+      return null;
+    if (receipt.attempts >= MAX_ATTEMPTS) {
+      await tx.eventReceipt.update({
+        where: { id: receipt.id },
+        data: {
+          status: 'failed',
+          failedAt: receipt.failedAt ?? new Date(),
+          errorCode: 'PROCESSING_FAILED',
+        },
+      });
+      return null;
+    }
+    const attempt = receipt.attempts + 1;
+    await tx.eventReceipt.update({
+      where: { id: receipt.id },
+      data: { attempts: attempt },
+    });
+    return attempt;
+  });
 }
 export async function processReceipt(
   db: PrismaClient,
@@ -92,16 +126,26 @@ export async function recordFailure(
   attempts: number,
   terminal: boolean,
 ): Promise<void> {
-  await db.eventReceipt.updateMany({
-    where: {
-      id: data.receiptId,
-      generation: data.generation,
-      status: 'pending',
-    },
-    data: {
-      attempts,
-      errorCode: 'PROCESSING_FAILED',
-      ...(terminal ? { status: 'failed', failedAt: new Date() } : {}),
-    },
+  await db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "EventReceipt" WHERE id = ${data.receiptId}::uuid FOR UPDATE`;
+    const receipt = await tx.eventReceipt.findUnique({
+      where: { id: data.receiptId },
+    });
+    if (
+      !receipt ||
+      receipt.status !== 'pending' ||
+      receipt.generation !== data.generation
+    )
+      return;
+    await tx.eventReceipt.update({
+      where: { id: receipt.id },
+      data: {
+        attempts: Math.max(receipt.attempts, attempts),
+        errorCode: 'PROCESSING_FAILED',
+        ...(terminal
+          ? { status: 'failed', failedAt: receipt.failedAt ?? new Date() }
+          : {}),
+      },
+    });
   });
 }

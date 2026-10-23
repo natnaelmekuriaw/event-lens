@@ -21,8 +21,10 @@ export function defineConversionPathCases(fixture: () => Fixture) {
     let publicKey: string;
     let viewerCookie: string;
     let pathId: string;
-    const from = '2026-03-01T00:00:00Z';
-    const to = '2026-03-01T00:15:00Z';
+    const from = new Date(Date.now() - 86400000).toISOString();
+    const at = (minute: number) =>
+      new Date(Date.parse(from) + minute * 60000).toISOString();
+    const to = at(15);
     const definition = {
       name: 'Onboarding',
       steps: [
@@ -119,25 +121,14 @@ export function defineConversionPathCases(fixture: () => Fixture) {
           { projectId, anonymousId: 'path-one-b', userId: 'path-user-one' },
         ],
       });
-      await event('path-one-a', 'game_started', '2026-03-01T00:05:00Z');
-      await event('path-one-b', 'level_completed', '2026-03-01T00:10:00Z');
-      await event('path-one-b', 'purchase_completed', '2026-03-01T00:20:00Z');
-      await event('path-two', 'game_started', '2026-03-01T00:06:00Z');
-      await event(
-        'path-two',
-        'level_completed',
-        '2026-03-01T00:12:00Z',
-        'desktop',
-      );
-      await event('path-three', 'game_started', '2026-03-01T00:07:00Z');
-      await event('path-three', 'level_completed', '2026-03-01T01:08:00Z');
-      await event(
-        'foreign',
-        'game_started',
-        '2026-03-01T00:08:00Z',
-        'browser',
-        otherProjectId,
-      );
+      await event('path-one-a', 'game_started', at(5));
+      await event('path-one-b', 'level_completed', at(10));
+      await event('path-one-b', 'purchase_completed', at(20));
+      await event('path-two', 'game_started', at(6));
+      await event('path-two', 'level_completed', at(12), 'desktop');
+      await event('path-three', 'game_started', at(7));
+      await event('path-three', 'level_completed', at(68));
+      await event('foreign', 'game_started', at(8), 'browser', otherProjectId);
     });
     it('validates and saves definitions with owner permissions', async () => {
       expect(

@@ -81,9 +81,19 @@ export function ConversionPathsPage({
     setSteps((current) =>
       current.map((step, position) => {
         if (position !== index) return step;
-        if (key === 'propertyKey' || key === 'propertyValue') {
-          return { ...step, [key]: value || undefined };
-        }
+        if (key === 'propertyKey')
+          return value
+            ? {
+                ...step,
+                propertyKey: value,
+                propertyValue: step.propertyValue ?? '',
+              }
+            : { name: step.name };
+        if (key === 'propertyValue')
+          return {
+            ...step,
+            propertyValue: value || (step.propertyKey ? '' : undefined),
+          };
         return { ...step, name: value };
       }),
     );
@@ -175,6 +185,14 @@ export function ConversionPathsPage({
   const listedPaths = [...(paths.data?.items ?? []), ...morePaths];
   const nextCursor =
     moreCursor === undefined ? paths.data?.nextCursor : moreCursor;
+  const appliedRange = new URLSearchParams(query);
+  const visibleResult =
+    selected &&
+    results.data?.funnelId === selected.id &&
+    results.data.from === appliedRange.get('from') &&
+    results.data.to === appliedRange.get('to')
+      ? results.data
+      : null;
 
   return (
     <>
@@ -193,7 +211,9 @@ export function ConversionPathsPage({
         </p>
       </div>
       <FormMessage
-        error={error ?? workspace.error ?? paths.error ?? results.error}
+        error={
+          error ?? workspace.error ?? paths.error ?? (selected && results.error)
+        }
         success={success}
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2fr)]">
@@ -415,14 +435,14 @@ export function ConversionPathsPage({
                 may fall after Through, within the completion window. Each
                 person counts once per step.
               </p>
-              {results.loading ? (
+              {results.loading || (!visibleResult && !results.error) ? (
                 <p className="muted mt-6" role="status">
                   Counting conversions…
                 </p>
               ) : (
-                results.data && (
+                visibleResult && (
                   <>
-                    {results.data.entries === 0 && (
+                    {visibleResult.entries === 0 && (
                       <p className="muted mt-6">
                         No people entered this path in the selected dates.
                       </p>
@@ -452,7 +472,7 @@ export function ConversionPathsPage({
                           </tr>
                         </thead>
                         <tbody>
-                          {results.data.steps.map((step) => (
+                          {visibleResult.steps.map((step) => (
                             <tr key={step.step} className="border-b">
                               <th scope="row" className="p-2 font-medium">
                                 {step.step}. {step.name}
@@ -476,7 +496,7 @@ export function ConversionPathsPage({
                     </div>
                     <p className="muted mt-4 text-xs">
                       Counted as of{' '}
-                      {new Date(results.data.asOf).toLocaleString()}.
+                      {new Date(visibleResult.asOf).toLocaleString()}.
                     </p>
                   </>
                 )

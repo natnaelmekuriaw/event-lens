@@ -11,3 +11,23 @@ A conversion path measures how many actors complete an ordered sequence of 2–6
 - Results are a live snapshot of processed, retained events. Recent entries may still convert before their window expires, so their counts are provisional. Retention and newly linked identities may also change historical results.
 
 Definitions belong to one project. Owners and admins may create, edit, or delete them; any workspace member may list definitions and view results. Public project keys cannot read or manage paths. The API limits each result to 100,000 entrants; narrow the date range when a project exceeds this bound.
+
+## API and dashboard
+
+Open `/workspaces/:workspaceId/projects/:projectId/conversion-paths` in the
+dashboard. Choose 2–6 steps and a completion window, then save the definition.
+The UTC date controls include the Through day and send an exclusive `to` instant.
+The results table shows exact people, dropoff, conversion from entry, and
+conversion from the previous step.
+
+The authenticated API base is
+`/api/v1/workspaces/:workspaceId/projects/:projectId/conversion-paths`:
+
+- `GET /?limit=100&cursor=...` lists saved paths with `items` and `nextCursor`.
+- `POST /` saves a definition; `PUT /:pathId` replaces it; `DELETE /:pathId` removes it.
+- `GET /:pathId` returns one definition.
+- `GET /:pathId/results?from=...&to=...` computes live counts.
+
+The definition body has `name`, `windowMinutes`, and `steps` in order. A step
+has `name` and optionally both `propertyKey` and `propertyValue`. The server
+rejects unknown fields, invalid ranges, and duplicate names within a project.

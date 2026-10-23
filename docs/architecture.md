@@ -26,8 +26,10 @@ loss or worker downtime delays visibility while pending receipts remain durable.
 
 ## Boundaries
 
-- `apps/api`: HTTP, sessions, workspace access, ingestion, event reads, replay.
-- `apps/web`: dashboard forms, event explorer, and processing status.
+- `apps/api`: HTTP, sessions, workspace access, ingestion, event reads, analytics,
+  conversion path evaluation, and replay.
+- `apps/web`: dashboard forms, event explorer, analytics, conversion paths,
+  and processing status.
 - `apps/worker`: outbox dispatch, BullMQ consumer, retention, private health.
 - `packages/contracts`: shared bounded validation and response types.
 - `packages/database`: schema, migrations, and database client factory.
@@ -60,7 +62,7 @@ identity rules, recovery, and limitations.
 
 ## Later work
 
-Analytics initially query stored events directly. Trends, funnels, and cohort
-retention arrive in later phases. Partitioning, rollups, distributed admission
+Analytics and conversion paths query stored events directly. Cohort retention
+arrives in a later phase. Partitioning, rollups, distributed admission
 limits, and complete production container packaging require separate scope and
 measurements.

@@ -9,7 +9,8 @@ Phase 3 reports processed events from PostgreSQL. All endpoints require a signed
 - Event name filters use exact names. Property filters compare one top-level scalar value as text, using a parameterized key and value. Missing, object, array, and null properties do not match. Filters apply before counts and distinct actors are calculated.
 - Top events are the ten most frequent matching `track` names in the selected range, ordered by count then name. Activity timelines use the same range and filters, sorted by occurrence time then event ID, newest first; a user timeline includes linked anonymous history and excludes conflicting activity for another user.
 
-These rules define counting only. Funnel conversion and cohort retention have separate rules in later phases.
+These rules define overview and activity counting. Ordered conversion paths
+have [their own counting rules](conversion-paths.md); cohort retention is a later phase.
 
 ## API and dashboard
 

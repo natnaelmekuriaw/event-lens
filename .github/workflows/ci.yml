@@ -39,12 +39,14 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Save ingestion benchmark results
+      - name: Save benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ingestion-benchmark
-          path: .tmp/benchmark-ingestion.json
+          name: analytics-benchmarks
+          path: |
+            .tmp/benchmark-ingestion.json
+            .tmp/benchmark-analytics.json
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

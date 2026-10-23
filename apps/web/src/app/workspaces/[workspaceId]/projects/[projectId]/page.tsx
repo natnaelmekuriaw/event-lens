@@ -172,6 +172,16 @@ function ProjectSettings({
                 ))}
             </Card>
             <Card className="border-dashed bg-transparent">
+              <h2 className="font-semibold">Understand your product</h2>
+              <p className="muted mt-2">
+                See event trends, active users, popular features, and individual
+                activity.
+              </p>
+              <Button asChild className="mt-4">
+                <Link href={`${path}/analytics`}>Open analytics</Link>
+              </Button>
+            </Card>{' '}
+            <Card className="border-dashed bg-transparent">
               <h2 className="font-semibold">Explore your events</h2>
               <p className="muted mt-2">
                 Send events with the SDK, then inspect activity and delivery

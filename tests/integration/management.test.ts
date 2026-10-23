@@ -1,3 +1,4 @@
+import { defineAnalyticsCases } from './analytics-cases.js';
 import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -319,6 +320,13 @@ describe('management API against isolated PostgreSQL', () => {
     ).toBe(401);
   });
   defineEventPipelineCases(() => ({
+    app,
+    base,
+    ownerCookie,
+    workspaceId,
+    viewerEmail,
+  }));
+  defineAnalyticsCases(() => ({
     app,
     base,
     ownerCookie,

@@ -93,3 +93,4 @@ export function canManageProjects(role: Role): boolean {
 }
 
 export * from './events.js';
+export * from './analytics.js';

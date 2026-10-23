@@ -113,6 +113,9 @@ export function EventExplorer({
             </select>
           </label>
           <Button asChild variant="outline">
+            <Link href={`${base}/analytics`}>Analytics</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href={base}>Settings</Link>
           </Button>
         </div>

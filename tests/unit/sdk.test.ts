@@ -12,7 +12,9 @@ function client(options: Partial<Parameters<typeof createEventLens>[0]> = {}) {
     endpoint: 'http://localhost:3001',
     projectKey: key,
     runtime: 'node',
-    context: { anonymousId: 'request-1' },
+    ...(options.runtime === 'browser'
+      ? {}
+      : { context: { anonymousId: 'request-1' } }),
     flushIntervalMs: 0,
     ...options,
   });
@@ -127,14 +129,14 @@ describe('SDK delivery and identity', () => {
         values.delete(key);
       },
     };
-    const sdk = client({ runtime: 'browser', storage, context: undefined });
+    const sdk = client({ runtime: 'browser', storage });
     sdk.identify('private-user');
     sdk.track('game_started');
     sdk.setOptOut(true);
     expect(sdk.pendingCount).toBe(0);
     expect(sdk.track('game_over')).toBe(false);
     expect([...values.values()]).not.toContain('private-user');
-    const next = client({ runtime: 'browser', storage, context: undefined });
+    const next = client({ runtime: 'browser', storage });
     expect(next.track('game_started')).toBe(false);
   });
   it('survives unavailable storage and rejects invalid properties', () => {
@@ -149,7 +151,7 @@ describe('SDK delivery and identity', () => {
         throw Error();
       },
     };
-    const sdk = client({ runtime: 'browser', context: undefined, storage });
+    const sdk = client({ runtime: 'browser', storage });
     expect(sdk.track('game_started')).toBe(true);
     expect(sdk.track('', {})).toBe(false);
     expect(sdk.track('game_over', { score: Infinity })).toBe(false);
@@ -169,5 +171,90 @@ describe('SDK delivery and identity', () => {
     sdk.setOptOut(true);
     await result;
     expect(send).toHaveBeenCalledTimes(1);
+  });
+  it('does not revive an aborted delivery when tracking is immediately enabled again', async () => {
+    vi.useFakeTimers();
+    const send = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(
+        async (_url, options) =>
+          new Promise((_resolve, reject) => {
+            options!.signal!.addEventListener('abort', () =>
+              reject(new Error('aborted')),
+            );
+          }),
+      )
+      .mockResolvedValue(new Response('{}', { status: 202 }));
+    const sdk = client({ fetch: send });
+    sdk.track('cancelled_event');
+    const pending = sdk.flush();
+    sdk.setOptOut(true);
+    sdk.setOptOut(false);
+    await vi.runAllTimersAsync();
+    await pending;
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(sdk.pendingCount).toBe(0);
+    expect(sdk.track('fresh_event')).toBe(true);
+    await sdk.flush();
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(
+      JSON.parse(String(send.mock.calls[1]![1]!.body)).events.map(
+        (event: { name: string }) => event.name,
+      ),
+    ).toEqual(['fresh_event']);
+  });
+
+  it('cancels retry backoff promptly and leaves new events for a fresh flush', async () => {
+    vi.useFakeTimers();
+    const send = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response('{}', { status: 503 }))
+      .mockResolvedValue(new Response('{}', { status: 202 }));
+    const sdk = client({ fetch: send });
+    sdk.track('cancelled_retry');
+    let settled = false;
+    const pending = sdk.flush().then(() => {
+      settled = true;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    sdk.setOptOut(true);
+    sdk.setOptOut(false);
+    expect(sdk.track('new_generation')).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(settled).toBe(true);
+    await pending;
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(sdk.pendingCount).toBe(1);
+    await sdk.flush();
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(
+      JSON.parse(String(send.mock.calls[1]![1]!.body)).events[0].name,
+    ).toBe('new_generation');
+  });
+
+  it('preserves the actor when enabling already enabled tracking', () => {
+    const sdk = client();
+    sdk.identify('same-account');
+    const identity = sdk.getIdentity();
+    sdk.setOptOut(false);
+    expect(sdk.getIdentity()).toEqual(identity);
+    expect(sdk.pendingCount).toBe(1);
+  });
+
+  it('rejects properties whose getters throw without breaking the caller', () => {
+    const onError = vi.fn();
+    const sdk = client({ onError });
+    const properties = Object.defineProperty({}, 'score', {
+      enumerable: true,
+      get() {
+        throw new Error('unavailable');
+      },
+    });
+    expect(sdk.track('invalid_properties', properties)).toBe(false);
+    expect(onError).toHaveBeenCalledWith('INVALID_EVENT');
+    expect(sdk.pendingCount).toBe(0);
   });
 });

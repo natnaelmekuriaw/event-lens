@@ -1,10 +1,10 @@
+import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import type { INestApplication } from '@nestjs/common';
 import { createApp } from '../../apps/api/src/server.js';
 import { DatabaseService } from '../../apps/api/src/database.service.js';
 
-let app: INestApplication;
+let app: Awaited<ReturnType<typeof createApp>>;
 let base: string;
 let ownerCookie: string;
 let viewerCookie: string;
@@ -318,4 +318,11 @@ describe('management API against isolated PostgreSQL', () => {
       (await request('/v1/workspaces', 'GET', undefined, viewerCookie)).status,
     ).toBe(401);
   });
+  defineEventPipelineCases(() => ({
+    app,
+    base,
+    ownerCookie,
+    workspaceId,
+    viewerEmail,
+  }));
 });

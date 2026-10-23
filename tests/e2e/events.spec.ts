@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { performance } from 'node:perf_hooks';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -49,7 +51,7 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
   page,
   context,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(90000);
   await signIn(page);
   const project = await createProject(page, 'GalaxyBalls journey');
   await page.goto(`${project.path}/events`);
@@ -120,6 +122,30 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
   );
   await expect(detail.locator('pre')).toContainText('"score": 100');
   await expect(detail.locator('pre')).toContainText('"level": 1');
+  const tracked = await page.request.get(
+    `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/events?name=level_completed`,
+  );
+  expect(tracked.status()).toBe(200);
+  const actorId = (await tracked.json()).items[0].anonymousId;
+  await page.getByRole('link', { name: 'Analytics', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Trends' })).toBeVisible();
+  await page.getByLabel('Event name', { exact: true }).fill('level_completed');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Events', exact: true }).locator('..'),
+  ).toContainText('1');
+  await page.getByText('View exact values').click();
+  await expect(
+    page.getByRole('table', { name: 'Events and active users by period' }),
+  ).toContainText('1');
+  await page.getByLabel('ID type').selectOption('anonymous');
+  await page.getByLabel('Exact ID').fill(actorId);
+  await page.getByRole('button', { name: 'Search activity' }).click();
+  await expect(page.getByText(`Anonymous ID: ${actorId}`)).toBeVisible();
+  await expect(
+    page.getByRole('list', { name: 'Activity events' }),
+  ).toContainText('level_completed');
+  await page.getByRole('link', { name: 'Events', exact: true }).click();
   await demo.getByLabel('Opt out of tracking').check();
   const before = await page.request.get(
     `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/processing`,
@@ -141,10 +167,10 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
   await demo.close();
 });
 
-test('record ingestion latency and throughput against a dedicated isolated project', async ({
+test('record ingestion and analytics latency against a dedicated isolated project', async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   await signIn(page);
   const project = await createProject(page, 'Ingestion benchmark');
   console.log(
@@ -177,4 +203,60 @@ test('record ingestion latency and throughput against a dedicated isolated proje
       else reject(new Error(`Ingestion benchmark failed (${signal ?? code})`));
     });
   });
+  await expect
+    .poll(
+      async () => {
+        const response = await page.request.get(
+          `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/processing`,
+        );
+        expect(response.status()).toBe(200);
+        return (await response.json()).processed as number;
+      },
+      { timeout: 90000, interval: 500 },
+    )
+    .toBe(1000);
+  const now = Date.now();
+  const from = new Date(now - 86400000).toISOString();
+  const to = new Date(now + 86400000).toISOString();
+  const query = new URLSearchParams({ from, to, bucket: 'day' });
+  const url = `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/analytics/overview?${query}`;
+  for (let index = 0; index < 2; index++) {
+    const warmup = await page.request.get(url);
+    expect(warmup.status()).toBe(200);
+  }
+  const samples: number[] = [];
+  for (let index = 0; index < 20; index++) {
+    const start = performance.now();
+    const response = await page.request.get(url);
+    samples.push(performance.now() - start);
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    expect(data.totalEvents).toBe(1000);
+    expect(data.activeUsers).toBe(100);
+  }
+  samples.sort((left, right) => left - right);
+  const percentile = (fraction: number) =>
+    samples[Math.ceil(samples.length * fraction) - 1];
+  const report = {
+    measuredAt: new Date().toISOString(),
+    workload: 'Authenticated project overview with 1000 processed track events',
+    dataset: { events: 1000, actors: 100 },
+    configuration: { warmupRequests: 2, measuredRequests: samples.length },
+    requestLatencyMs: {
+      p50: percentile(0.5),
+      p95: percentile(0.95),
+      max: samples.at(-1),
+    },
+    limitations:
+      'Small isolated local dataset; includes HTTP, authentication, and three PostgreSQL aggregate queries. Not a capacity guarantee.',
+  };
+  const directory = fileURLToPath(new URL('../../.tmp/', import.meta.url));
+  await mkdir(directory, { recursive: true });
+  await writeFile(
+    fileURLToPath(
+      new URL('../../.tmp/benchmark-analytics.json', import.meta.url),
+    ),
+    JSON.stringify(report, null, 2) + '\n',
+  );
+  console.log('Analytics benchmark:', JSON.stringify(report));
 });

@@ -86,7 +86,10 @@ export function ActivityTimeline({
           ) : activity.data?.items.length === 0 ? (
             <p className="muted">No activity matches this ID and range.</p>
           ) : (
-            <ol className="border-l border-stone-200 pl-5">
+            <ol
+              aria-label="Activity events"
+              className="border-l border-stone-200 pl-5"
+            >
               {activity.data?.items.map((event) => (
                 <li key={event.id} className="relative mb-5">
                   <span

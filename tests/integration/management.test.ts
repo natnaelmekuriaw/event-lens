@@ -1,4 +1,5 @@
 import { defineAnalyticsCases } from './analytics-cases.js';
+import { defineRetentionCases } from './retention-cases.js';
 import { defineConversionPathCases } from './conversion-path-cases.js';
 import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -335,6 +336,14 @@ describe('management API against isolated PostgreSQL', () => {
     viewerEmail,
   }));
   defineConversionPathCases(() => ({
+    app,
+    base,
+    ownerCookie,
+    workspaceId,
+    otherWorkspaceId,
+    viewerEmail,
+  }));
+  defineRetentionCases(() => ({
     app,
     base,
     ownerCookie,

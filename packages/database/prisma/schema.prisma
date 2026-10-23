@@ -107,9 +107,10 @@ model Project {
   createdAt   DateTime  @default(now()) @db.Timestamptz(3)
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  receipts EventReceipt[]
-  events AnalyticsEvent[]
-  identities IdentityLink[]
+  receipts        EventReceipt[]
+  events          AnalyticsEvent[]
+  identities      IdentityLink[]
+  conversionPaths ConversionPath[]
 
   @@index([workspaceId, id])
 }
@@ -136,46 +137,50 @@ enum ReceiptStatus {
 }
 
 model EventReceipt {
-  id String @id @default(uuid()) @db.Uuid
-  projectId String @db.Uuid
-  eventId String @db.Uuid
-  payload Json?
-  status ReceiptStatus @default(pending)
-  receivedAt DateTime @default(now()) @db.Timestamptz(3)
-  processedAt DateTime? @db.Timestamptz(3)
-  failedAt DateTime? @db.Timestamptz(3)
-  attempts Int @default(0)
-  generation Int @default(0)
-  errorCode String? @db.VarChar(40)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  outbox EventOutbox?
+  id          String        @id @default(uuid()) @db.Uuid
+  projectId   String        @db.Uuid
+  eventId     String        @db.Uuid
+  payload     Json?
+  status      ReceiptStatus @default(pending)
+  receivedAt  DateTime      @default(now()) @db.Timestamptz(3)
+  processedAt DateTime?     @db.Timestamptz(3)
+  failedAt    DateTime?     @db.Timestamptz(3)
+  attempts    Int           @default(0)
+  generation  Int           @default(0)
+  errorCode   String?       @db.VarChar(40)
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outbox      EventOutbox?
+
   @@unique([projectId, eventId])
   @@index([projectId, status, id])
   @@index([status, failedAt])
 }
 
 model EventOutbox {
-  receiptId String @id @db.Uuid
-  nextDispatchAt DateTime @default(now()) @db.Timestamptz(3)
-  receipt EventReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  receiptId      String       @id @db.Uuid
+  nextDispatchAt DateTime     @default(now()) @db.Timestamptz(3)
+  receipt        EventReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
   @@index([nextDispatchAt])
 }
 
 model AnalyticsEvent {
-  id String @id @db.Uuid
-  projectId String @db.Uuid
-  eventId String @db.Uuid
-  type String @db.VarChar(10)
-  name String @db.VarChar(100)
-  anonymousId String @db.VarChar(200)
-  userId String? @db.VarChar(200)
-  properties Json
-  occurredAt DateTime @db.Timestamptz(3)
-  receivedAt DateTime @db.Timestamptz(3)
-  identityConflict Boolean @default(false)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id               String   @id @db.Uuid
+  projectId        String   @db.Uuid
+  eventId          String   @db.Uuid
+  type             String   @db.VarChar(10)
+  name             String   @db.VarChar(100)
+  anonymousId      String   @db.VarChar(200)
+  userId           String?  @db.VarChar(200)
+  properties       Json
+  occurredAt       DateTime @db.Timestamptz(3)
+  receivedAt       DateTime @db.Timestamptz(3)
+  identityConflict Boolean  @default(false)
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@unique([projectId, eventId])
   @@index([projectId, occurredAt, id])
+  @@index([projectId, type, occurredAt, eventId])
   @@index([projectId, name, occurredAt, id])
   @@index([projectId, anonymousId, occurredAt])
   @@index([projectId, userId, occurredAt])
@@ -183,12 +188,27 @@ model AnalyticsEvent {
 }
 
 model IdentityLink {
-  projectId String @db.Uuid
-  anonymousId String @db.VarChar(200)
-  userId String @db.VarChar(200)
-  updatedAt DateTime @default(now()) @db.Timestamptz(3)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String   @db.Uuid
+  anonymousId String   @db.VarChar(200)
+  userId      String   @db.VarChar(200)
+  updatedAt   DateTime @default(now()) @db.Timestamptz(3)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@id([projectId, anonymousId])
   @@index([projectId, userId])
   @@index([updatedAt])
+}
+
+model ConversionPath {
+  id            String   @id @default(uuid()) @db.Uuid
+  projectId     String   @db.Uuid
+  name          String   @db.VarChar(80)
+  steps         Json
+  windowMinutes Int
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId, createdAt, id])
 }

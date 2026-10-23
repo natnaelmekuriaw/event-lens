@@ -27,7 +27,7 @@ jobs:
         with:
           version: '11.25.0'
           run_install: false
-      - name: Verify accounts and event pipeline
+      - name: Verify EventLens
         run: pnpm verify
       - name: Save browser failure details
         if: failure()
@@ -43,10 +43,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: analytics-benchmarks
+          name: eventlens-benchmarks
           path: |
             .tmp/benchmark-ingestion.json
             .tmp/benchmark-analytics.json
+            .tmp/benchmark-conversion-paths.json
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

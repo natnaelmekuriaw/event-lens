@@ -1,4 +1,5 @@
 import { defineAnalyticsCases } from './analytics-cases.js';
+import { defineConversionPathCases } from './conversion-path-cases.js';
 import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -331,6 +332,14 @@ describe('management API against isolated PostgreSQL', () => {
     base,
     ownerCookie,
     workspaceId,
+    viewerEmail,
+  }));
+  defineConversionPathCases(() => ({
+    app,
+    base,
+    ownerCookie,
+    workspaceId,
+    otherWorkspaceId,
     viewerEmail,
   }));
 });

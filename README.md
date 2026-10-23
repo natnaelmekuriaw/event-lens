@@ -3,9 +3,9 @@
 EventLens is a self-hosted product analytics platform for understanding what users
 do, which features they use, and where they drop off.
 
-Phases 1 and 2 provide account and project management, browser and Node event
-collection, durable ingestion, background processing, and an event explorer.
-Trends, funnels, and cohort retention follow in later phases.
+EventLens includes account and project management, browser and Node event
+collection, durable ingestion, event exploration, analytics, and conversion paths.
+Cohort retention remains a later phase.
 
 ## Current features
 
@@ -18,6 +18,9 @@ Trends, funnels, and cohort retention follow in later phases.
   processing, retained failure status, and owner/admin replay.
 - Project event explorer with filters, event details, pagination, live polling,
   processing counts, and failure controls.
+- Project analytics with trends, active users, top events, and activity timelines.
+- Saved conversion paths with ordered event steps, optional property filters,
+  completion windows, and exact conversion counts.
 - GalaxyBalls demo, migrations, health endpoints, CI, and one verification script.
 
 Public signup is disabled. Invitation links are shared privately; EventLens does
@@ -72,6 +75,8 @@ Open [GalaxyBalls](http://localhost:3003), enter `http://localhost:3001` and a
 public project key, then start a game and complete a level. Open the project's
 **Events** page and refresh or enable live updates. A 202 acceptance means the
 batch committed to PostgreSQL; the worker makes it visible in the explorer.
+Open **Analytics** for trends or **Conversion paths** to save and inspect a
+sequence such as `game_started` → `level_completed`.
 
 ## SDK
 
@@ -108,8 +113,8 @@ Docker and access to the package registry and browser downloads. Set
 `PLAYWRIGHT_CHANNEL=chrome` or `msedge` in the environment or local `.env`
 to use an installed browser. Focused offline checks can run during implementation.
 
-Phase 3 full runtime checks and benchmark measurements require executing this
-command against the new revision; no performance figures are claimed here.
+Full runtime checks and benchmark measurements require executing this command
+against this revision; no performance figures are claimed here.
 
 ## Repository guide
 
@@ -127,6 +132,7 @@ command against the new revision; no performance figures are claimed here.
 
 Read the [phase plan](docs/plan.md), [architecture](docs/architecture.md),
 [event semantics and operations](docs/events.md), [analytics counting rules](docs/analytics.md),
+[conversion path rules](docs/conversion-paths.md),
 [self-hosting guide](docs/self-hosting.md),
 [contribution rules](CONTRIBUTING.md), and [security notes](SECURITY.md).
 

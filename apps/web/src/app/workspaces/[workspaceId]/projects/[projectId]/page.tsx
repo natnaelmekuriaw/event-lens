@@ -191,6 +191,17 @@ function ProjectSettings({
                 <Link href={`${path}/events`}>Open event explorer</Link>
               </Button>
             </Card>
+            <Card className="border-dashed bg-transparent">
+              <h2 className="font-semibold">Conversion paths</h2>
+              <p className="muted mt-2">
+                See how many people complete a sequence of product events.
+              </p>
+              <Button asChild className="mt-4">
+                <Link href={`${path}/conversion-paths`}>
+                  Open conversion paths
+                </Link>
+              </Button>
+            </Card>
           </div>
         )
       )}

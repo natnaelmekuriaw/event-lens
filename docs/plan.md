@@ -7,14 +7,14 @@ Each phase is agreed before implementation; later phases remain proposals.
 | ----- | -------------------- | ------------------------------------------------------------------------------------- | ----------------- |
 | 1     | `feat/project-setup` | Accounts, workspaces, roles, projects, dashboard, database, Compose, CI, verification | 20–32             |
 | 2     | `feat/events`        | SDK-to-dashboard pipeline, identity, durable ingestion, workers, demo                 | 30–44             |
-| 3     | `feat/analytics`     | Trends, active users, filters, timezones, activity timelines                          | 20–32             |
+| 3     | `feat/analytics`     | Trends, active users, filters, timezones, activity timelines                          | 40–55             |
 | 4     | `feat/funnels`       | Ordered funnels with documented and tested counting rules                             | 16–24             |
 | 5     | `feat/retention`     | Daily cohorts, return events, observation windows                                     | 16–24             |
 | 6     | `feat/release`       | Recovery, measured performance, backup/restore, release polish                        | 20–32             |
 
-Phases 1 and 2 are authorized. Phase 1 verification passed. Phase 2 implements the
+Phases 1, 2, and 3 are authorized. Phase 1 verification passed. Phase 2 implements the
 agreed scope on `feat/events`; full runtime verification and benchmark measurements
-must run against its completed revision before publishing. Later phases remain
+must run against its completed revision before publishing. Phases 4–6 remain
 proposals. Commit estimates are flexible: each commit represents a coherent
 change, and scope/count mismatches are reported rather than filled with churn.
 

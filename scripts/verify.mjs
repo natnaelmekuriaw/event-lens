@@ -200,7 +200,7 @@ async function verify() {
       ]);
     }
     progress(
-      'Run browser journeys and ingestion benchmark with isolated API, worker, and demo servers',
+      'Run browser journeys and ingestion and analytics benchmarks with isolated API, worker, and demo servers',
     );
     await pnpm(['test:e2e'], testEnv);
   } catch (error) {
@@ -266,7 +266,7 @@ async function verify() {
   if (failures.length)
     throw new AggregateError(failures, 'Verification failed');
   console.log(
-    '\nVerification and ingestion benchmark passed. Results: .tmp/benchmark-ingestion.json.',
+    '\nVerification and benchmarks passed. Results: .tmp/benchmark-ingestion.json and .tmp/benchmark-analytics.json.',
   );
 }
 

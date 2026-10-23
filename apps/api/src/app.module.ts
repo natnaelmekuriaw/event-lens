@@ -1,3 +1,5 @@
+import { AnalyticsController } from './analytics/analytics.controller.js';
+import { AnalyticsService } from './analytics/analytics.service.js';
 import { EventsController } from './events/events.controller.js';
 import { EventsService } from './events/events.service.js';
 import { IngestionController } from './events/ingestion.controller.js';
@@ -29,6 +31,7 @@ import {
     HealthController,
     IngestionController,
     EventsController,
+    AnalyticsController,
     SetupController,
     WorkspacesController,
     ProjectsController,
@@ -41,6 +44,7 @@ import {
     DatabaseService,
     IngestionService,
     EventsService,
+    AnalyticsService,
     AuthService,
     SessionGuard,
     OriginGuard,

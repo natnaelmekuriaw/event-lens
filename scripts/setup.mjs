@@ -22,5 +22,25 @@ try {
   );
 } catch (error) {
   if (error.code !== 'EEXIST') throw error;
-  console.log('.env already exists; keeping its values.');
+  const environmentFile = new URL('.env', root);
+  const existing = await readFile(environmentFile, 'utf8');
+  const defaults = {
+    REDIS_URL: 'redis://localhost:6379',
+    WORKER_PORT: '3002',
+    EVENT_RETENTION_DAYS: '90',
+  };
+  const missing = Object.entries(defaults).filter(
+    ([key]) => !new RegExp('^\\s*' + key + '\\s*=', 'm').test(existing),
+  );
+  if (missing.length)
+    await writeFile(
+      environmentFile,
+      (existing.endsWith('\n') ? '' : '\n') +
+        missing.map(([key, value]) => key + '=' + value).join('\n') +
+        '\n',
+      { flag: 'a' },
+    );
+  console.log(
+    '.env already exists; preserved its values and added any missing Phase 2 defaults.',
+  );
 }

@@ -1,3 +1,4 @@
+import { ingestionHttp } from './events/ingestion-http.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -19,6 +20,7 @@ export async function createApp() {
   app.disable('x-powered-by');
   app.use(httpLogger);
   app.use(helmet());
+  app.use('/api/v1/ingest', ...ingestionHttp());
   app.use(createAbuseLimiter());
   app.use(
     (
@@ -41,7 +43,7 @@ export async function createApp() {
     new DocumentBuilder()
       .setTitle('EventLens API')
       .setDescription(
-        'Phase 1 account, workspace, and project management. Requires a session cookie; public project keys grant no management access.',
+        'Event collection and project management. Requires a session cookie; public project keys grant no management access.',
       )
       .setVersion('0.1.0')
       .addCookieAuth('better-auth.session_token')

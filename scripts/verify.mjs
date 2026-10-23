@@ -77,6 +77,7 @@ async function verify() {
 
   let admin;
   let createdDatabase;
+  let verificationQueue;
   const failures = [];
   try {
     progress('Install the exact dependency versions from the lockfile');
@@ -84,9 +85,10 @@ async function verify() {
     progress('Create local configuration when needed');
     await run(process.execPath, ['scripts/setup.mjs']);
     process.loadEnvFile(new URL('../.env', import.meta.url));
-    if (!process.env.DATABASE_URL) {
+    if (!process.env.DATABASE_URL)
       throw new Error('DATABASE_URL is required in .env.');
-    }
+    if (!process.env.REDIS_URL)
+      throw new Error('REDIS_URL is required in .env.');
     const browserChannel = process.env.PLAYWRIGHT_CHANNEL;
     if (
       browserChannel !== undefined &&
@@ -95,20 +97,14 @@ async function verify() {
       throw new Error('PLAYWRIGHT_CHANNEL must be chrome or msedge when set.');
     }
 
-    progress('Start PostgreSQL and wait for its health check');
-    await run('docker', ['compose', 'up', '-d', '--wait', 'postgres']);
+    progress('Start PostgreSQL and Redis and wait for their health checks');
+    await run('docker', ['compose', 'up', '-d', '--wait', 'postgres', 'redis']);
     progress('Generate the database client');
     await pnpm(['db:generate']);
     progress('Apply application database migrations');
     await pnpm(['db:migrate']);
-    progress('Build the database and contract packages');
-    await pnpm([
-      '--filter',
-      '@eventlens/database',
-      '--filter',
-      '@eventlens/contracts',
-      'build',
-    ]);
+    progress('Build shared database, contracts, pipeline, and SDK packages');
+    await pnpm(['-r', '--filter', './packages/*', 'build']);
     progress('Check formatting');
     await pnpm(['format:check']);
     progress('Check lint rules');
@@ -124,14 +120,19 @@ async function verify() {
       APP_URL: 'http://localhost:3000',
       API_URL: 'http://localhost:3001',
       PORT: '3001',
+      WORKER_PORT: '3002',
     };
-    progress('Build the API and web application');
+    progress('Build the API, worker, web dashboard, and demo');
     await pnpm(
-      ['--filter', '@eventlens/api', '--filter', '@eventlens/web', 'build'],
-      { ...process.env, ...localOrigins, NODE_ENV: 'production' },
+      ['-r', '--filter', './apps/*', '--filter', './examples/*', 'build'],
+      {
+        ...process.env,
+        ...localOrigins,
+        NODE_ENV: 'production',
+      },
     );
 
-    progress('Create an isolated database for integration and browser tests');
+    progress('Create an isolated database and matching Redis queue namespace');
     const databaseRequire = createRequire(
       new URL('../packages/database/package.json', import.meta.url),
     );
@@ -154,6 +155,20 @@ async function verify() {
     }
     await admin.query(`CREATE DATABASE "${name}"`);
     createdDatabase = name;
+    const pipelineRequire = createRequire(
+      new URL('../packages/pipeline/package.json', import.meta.url),
+    );
+    const { Queue } = pipelineRequire('bullmq');
+    const { redisConnection, QUEUE_NAME } =
+      await import('../packages/pipeline/dist/queue.js');
+    verificationQueue = new Queue(QUEUE_NAME, {
+      prefix: name,
+      connection: redisConnection(process.env.REDIS_URL),
+    });
+    verificationQueue.on('error', () =>
+      console.error('Verification Redis connection unavailable.'),
+    );
+    await verificationQueue.waitUntilReady();
     const testUrl = new URL(process.env.DATABASE_URL);
     testUrl.pathname = `/${name}`;
     const testEnv = {
@@ -161,6 +176,7 @@ async function verify() {
       ...localOrigins,
       NODE_ENV: 'test',
       DATABASE_URL: testUrl.href,
+      EVENTLENS_QUEUE_PREFIX: name,
       TEST_DATABASE_ISOLATED: '1',
       TEST_OWNER_EMAIL: `owner-${randomBytes(8).toString('hex')}@example.com`,
       TEST_OWNER_PASSWORD: randomBytes(24).toString('hex'),
@@ -169,7 +185,7 @@ async function verify() {
     };
     progress('Apply migrations to the isolated test database');
     await pnpm(['db:migrate'], testEnv);
-    progress('Run integration tests and seed the isolated test owner');
+    progress('Run management and event pipeline integration tests');
     await pnpm(['test:integration'], testEnv);
     if (browserChannel) {
       progress(`Use installed ${browserChannel} for browser verification`);
@@ -183,11 +199,43 @@ async function verify() {
         'chromium',
       ]);
     }
-    progress('Run the browser workflow against the isolated database');
+    progress(
+      'Run browser journeys and ingestion benchmark with isolated API, worker, and demo servers',
+    );
     await pnpm(['test:e2e'], testEnv);
   } catch (error) {
     failures.push(error);
   } finally {
+    if (verificationQueue) {
+      progress('Remove only the Redis queue namespace created by this run');
+      try {
+        if (
+          !createdDatabase ||
+          verificationQueue.opts.prefix !== createdDatabase ||
+          !/^eventlens_verify_[0-9]+_[0-9a-f]{12}$/.test(createdDatabase)
+        ) {
+          failures.push(
+            new Error('Refusing to clean an unrecognized queue namespace.'),
+          );
+        } else await verificationQueue.obliterate({ force: true });
+      } catch (error) {
+        failures.push(
+          new Error('Failed to remove the isolated verification queue', {
+            cause: error,
+          }),
+        );
+      } finally {
+        try {
+          await verificationQueue.close();
+        } catch (error) {
+          failures.push(
+            new Error('Failed to close the verification queue connection', {
+              cause: error,
+            }),
+          );
+        }
+      }
+    }
     if (createdDatabase) {
       progress('Remove only the isolated database created by this run');
       try {
@@ -207,9 +255,7 @@ async function verify() {
         failures.push(
           new Error(
             'Failed to close the verification database connection pool',
-            {
-              cause: error,
-            },
+            { cause: error },
           ),
         );
       }
@@ -220,7 +266,7 @@ async function verify() {
   if (failures.length)
     throw new AggregateError(failures, 'Verification failed');
   console.log(
-    '\nVerification passed. Benchmarks are deferred until the event pipeline and analytics phases.',
+    '\nVerification and ingestion benchmark passed. Results: .tmp/benchmark-ingestion.json.',
   );
 }
 

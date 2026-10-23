@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - examples/*
 minimumReleaseAge: 1440
 allowBuilds:
   '@nestjs/core': false
@@ -11,3 +12,4 @@ allowBuilds:
   esbuild: true
   prisma: true
   sharp: true
+  msgpackr-extract: false

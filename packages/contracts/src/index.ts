@@ -91,3 +91,5 @@ export interface ApiError {
 export function canManageProjects(role: Role): boolean {
   return role === 'owner' || role === 'admin';
 }
+
+export * from './events.js';

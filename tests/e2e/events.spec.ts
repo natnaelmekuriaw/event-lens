@@ -145,6 +145,23 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
   await expect(
     page.getByRole('list', { name: 'Activity events' }),
   ).toContainText('level_completed');
+  await page.getByRole('link', { name: 'Conversion paths' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Conversion paths' }),
+  ).toBeVisible();
+  await page.getByLabel('Path name').fill('Game progress');
+  await page.getByLabel('Event name').nth(0).fill('game_started');
+  await page.getByLabel('Event name').nth(1).fill('level_completed');
+  await page.getByRole('button', { name: 'Create path' }).click();
+  await expect(
+    page.getByRole('table', { name: 'Conversion path results' }),
+  ).toContainText('level_completed');
+  await expect(
+    page
+      .getByRole('table', { name: 'Conversion path results' })
+      .getByRole('row', { name: /2\. level_completed/ }),
+  ).toContainText('1');
+  await page.getByRole('link', { name: 'Analytics', exact: true }).click();
   await page.getByRole('link', { name: 'Events', exact: true }).click();
   await demo.getByLabel('Opt out of tracking').check();
   const before = await page.request.get(
@@ -170,7 +187,7 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
 test('record ingestion and analytics latency against a dedicated isolated project', async ({
   page,
 }) => {
-  test.setTimeout(180000);
+  test.setTimeout(240000);
   await signIn(page);
   const project = await createProject(page, 'Ingestion benchmark');
   console.log(
@@ -259,4 +276,55 @@ test('record ingestion and analytics latency against a dedicated isolated projec
     JSON.stringify(report, null, 2) + '\n',
   );
   console.log('Analytics benchmark:', JSON.stringify(report));
+  const pathsUrl = `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/conversion-paths`;
+  const saved = await page.request.post(pathsUrl, {
+    headers: { Origin: 'http://localhost:3000' },
+    data: {
+      name: 'Benchmark repeated event',
+      steps: [{ name: 'benchmark_event' }, { name: 'benchmark_event' }],
+      windowMinutes: 60,
+    },
+  });
+  expect(saved.status()).toBe(201);
+  const pathId = (await saved.json()).id as string;
+  const pathQuery = new URLSearchParams({ from, to });
+  const resultsUrl = `${pathsUrl}/${pathId}/results?${pathQuery}`;
+  for (let index = 0; index < 2; index++) {
+    expect((await page.request.get(resultsUrl)).status()).toBe(200);
+  }
+  const pathSamples: number[] = [];
+  for (let index = 0; index < 20; index++) {
+    const start = performance.now();
+    const response = await page.request.get(resultsUrl);
+    pathSamples.push(performance.now() - start);
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    expect(data.steps.map((step: { users: number }) => step.users)).toEqual([
+      100, 100,
+    ]);
+  }
+  pathSamples.sort((left, right) => left - right);
+  const pathPercentile = (fraction: number) =>
+    pathSamples[Math.ceil(pathSamples.length * fraction) - 1];
+  const pathReport = {
+    measuredAt: new Date().toISOString(),
+    workload:
+      'Authenticated two-step conversion path over 1000 processed track events',
+    dataset: { events: 1000, actors: 100 },
+    configuration: { warmupRequests: 2, measuredRequests: pathSamples.length },
+    requestLatencyMs: {
+      p50: pathPercentile(0.5),
+      p95: pathPercentile(0.95),
+      max: pathSamples.at(-1),
+    },
+    limitations:
+      'Small isolated local dataset; includes HTTP, authentication, and a paged PostgreSQL event scan. Not a capacity guarantee.',
+  };
+  await writeFile(
+    fileURLToPath(
+      new URL('../../.tmp/benchmark-conversion-paths.json', import.meta.url),
+    ),
+    JSON.stringify(pathReport, null, 2) + '\n',
+  );
+  console.log('Conversion path benchmark:', JSON.stringify(pathReport));
 });

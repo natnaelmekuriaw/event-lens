@@ -185,7 +185,9 @@ async function verify() {
     };
     progress('Apply migrations to the isolated test database');
     await pnpm(['db:migrate'], testEnv);
-    progress('Run management and event pipeline integration tests');
+    progress(
+      'Run management, event, analytics, and conversion path integration tests',
+    );
     await pnpm(['test:integration'], testEnv);
     if (browserChannel) {
       progress(`Use installed ${browserChannel} for browser verification`);
@@ -266,7 +268,7 @@ async function verify() {
   if (failures.length)
     throw new AggregateError(failures, 'Verification failed');
   console.log(
-    '\nVerification and benchmarks passed. Results: .tmp/benchmark-ingestion.json and .tmp/benchmark-analytics.json.',
+    '\nVerification and benchmarks passed. Results: .tmp/benchmark-ingestion.json, .tmp/benchmark-analytics.json, and .tmp/benchmark-conversion-paths.json.',
   );
 }
 

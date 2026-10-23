@@ -12,8 +12,11 @@ Each phase is agreed before implementation; later phases remain proposals.
 | 5     | `feat/retention`        | Daily cohorts, return events, observation windows                                     | 32–48             |
 | 6     | `feat/release`          | Recovery, measured performance, backup/restore, release polish                        | 20–32             |
 
-Phases 1–5 are authorized. The owner confirmed Phase 4 verification and CI passed.
-Phase 5 proceeds on `feat/retention`; Phase 6 remains a proposal.
+Phases 1–5 are authorized and the owner confirmed Phase 5 verification passed.
+Phase 6A is authorized on `feat/release`: audit self-hosting, recovery, shutdown,
+backup/restore, security boundaries, and release documentation; produce a
+prioritized checklist in 1–2 meaningful commits. The remaining Phase 6 stages
+require scope agreement after reviewing [the release audit](release-audit.md).
 Commit estimates are flexible: each commit represents a coherent
 change, and scope/count mismatches are reported rather than filled with churn.
 
@@ -73,3 +76,14 @@ Approved stages on `feat/retention`: 5A rules and fixtures (6–10 commits),
 5B API (10–14), 5C dashboard (8–12), and 5D verification/docs (8–12).
 The implementation is smaller than this estimate; actual commits will follow
 coherent changes rather than the numerical target.
+
+## Phase 6A acceptance
+
+- Review source, tests, deployment configuration, and operating guides against the release deliverables.
+- Record confirmed behavior, code-backed risks, missing deliverables, and unexecuted runtime evidence with source references.
+- Rank release gates and define concrete completion checks.
+- Propose follow-up stages with scope, branch, expected outcome, and flexible commit estimates before implementation.
+- Run focused documentation checks; Docker, database operations, the full final suite, benchmarks, and push remain owner actions.
+
+The audit is recorded in [release-audit.md](release-audit.md). Its findings are
+open release gates; this stage does not implement their fixes.

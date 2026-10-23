@@ -1,6 +1,6 @@
 import type { AnalyticsQuery } from '@eventlens/contracts';
 
-function localDate(instant: string, timezone: string): string {
+export function localDate(instant: string, timezone: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     year: 'numeric',

@@ -10,7 +10,7 @@ Phase 3 reports processed events from PostgreSQL. All endpoints require a signed
 - Top events are the ten most frequent matching `track` names in the selected range, ordered by count then name. Activity timelines use the same range and filters, sorted by occurrence time then event ID, newest first; a user timeline includes linked anonymous history and excludes conflicting activity for another user.
 
 These rules define overview and activity counting. Ordered conversion paths
-have [their own counting rules](conversion-paths.md); cohort retention is a later phase.
+have [their own counting rules](conversion-paths.md), as does [daily retention](retention.md).
 
 ## API and dashboard
 

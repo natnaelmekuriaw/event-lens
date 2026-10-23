@@ -48,6 +48,7 @@ jobs:
             .tmp/benchmark-ingestion.json
             .tmp/benchmark-analytics.json
             .tmp/benchmark-conversion-paths.json
+            .tmp/benchmark-retention.json
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

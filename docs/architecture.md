@@ -62,7 +62,8 @@ identity rules, recovery, and limitations.
 
 ## Later work
 
-Analytics and conversion paths query stored events directly. Cohort retention
-arrives in a later phase. Partitioning, rollups, distributed admission
+Analytics, conversion paths, and daily retention query stored events directly.
+Retention uses one PostgreSQL statement for a consistent snapshot of entries,
+canonical identities, and distinct return days. Partitioning, rollups, distributed admission
 limits, and complete production container packaging require separate scope and
 measurements.

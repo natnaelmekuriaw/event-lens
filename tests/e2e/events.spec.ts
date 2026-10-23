@@ -162,6 +162,37 @@ test('GalaxyBalls SDK events pass through the worker into the filtered explorer'
       .getByRole('row', { name: /2\. level_completed/ }),
   ).toContainText('1');
   await page.getByRole('link', { name: '← Analytics', exact: true }).click();
+  await page.getByRole('link', { name: 'Retention', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Retention', exact: true }),
+  ).toBeVisible();
+  await page.getByLabel('Entry event', { exact: true }).fill('game_started');
+  await page
+    .getByLabel('Return event', { exact: true })
+    .fill('level_completed');
+  const entryEvents = await page.request.get(
+    `/api/v1${project.path}/events?name=game_started`,
+  );
+  expect(entryEvents.status()).toBe(200);
+  const entryDate = (await entryEvents.json()).items[0].occurredAt.slice(
+    0,
+    10,
+  ) as string;
+  await page.getByLabel('From (project date)', { exact: true }).fill(entryDate);
+  await page
+    .getByLabel('Before (project date, exclusive)', { exact: true })
+    .fill(
+      new Date(Date.parse(`${entryDate}T00:00:00Z`) + 86400000)
+        .toISOString()
+        .slice(0, 10),
+    );
+  await page.getByRole('button', { name: 'Calculate retention' }).click();
+  const retention = page.getByRole('table', { name: 'Daily cohort retention' });
+  await expect(retention).toContainText('Unavailable');
+  await expect(
+    retention.getByRole('row').nth(1).getByRole('cell').first(),
+  ).toHaveText('1');
+  await page.getByRole('link', { name: '← Analytics', exact: true }).click();
   await page.getByRole('link', { name: 'Events', exact: true }).click();
   await demo.getByLabel('Opt out of tracking').check();
   const before = await page.request.get(
@@ -327,4 +358,57 @@ test('record ingestion and analytics latency against a dedicated isolated projec
     JSON.stringify(pathReport, null, 2) + '\n',
   );
   console.log('Conversion path benchmark:', JSON.stringify(pathReport));
+  const cohortFrom = new Date(now - 86400000).toISOString().slice(0, 10);
+  const cohortTo = new Date(now + 86400000).toISOString().slice(0, 10);
+  const retentionQuery = new URLSearchParams({
+    from: cohortFrom,
+    to: cohortTo,
+    entryEvent: 'benchmark_event',
+    returnEvent: 'benchmark_event',
+    days: '7',
+  });
+  const retentionUrl = `/api/v1/workspaces/${project.workspaceId}/projects/${project.projectId}/retention?${retentionQuery}`;
+  for (let index = 0; index < 2; index++) {
+    expect((await page.request.get(retentionUrl)).status()).toBe(200);
+  }
+  const retentionSamples: number[] = [];
+  for (let index = 0; index < 20; index++) {
+    const start = performance.now();
+    const response = await page.request.get(retentionUrl);
+    retentionSamples.push(performance.now() - start);
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    expect(
+      data.cohorts.reduce(
+        (total: number, cohort: { size: number }) => total + cohort.size,
+        0,
+      ),
+    ).toBe(100);
+  }
+  retentionSamples.sort((left, right) => left - right);
+  const retentionReport = {
+    hostMetadataArtifact: 'benchmark-ingestion.json',
+    measuredAt: new Date().toISOString(),
+    workload:
+      'Authenticated seven-day daily cohort query over 1000 processed track events',
+    dataset: { events: 1000, actors: 100, cohortDays: 2, returnDays: 7 },
+    configuration: {
+      warmupRequests: 2,
+      measuredRequests: retentionSamples.length,
+    },
+    requestLatencyMs: {
+      p50: retentionSamples[9],
+      p95: retentionSamples[18],
+      max: retentionSamples.at(-1),
+    },
+    limitations:
+      'Small isolated local dataset concentrated on one entry day; includes HTTP, authentication, and PostgreSQL cohort aggregation. Not a capacity guarantee.',
+  };
+  await writeFile(
+    fileURLToPath(
+      new URL('../../.tmp/benchmark-retention.json', import.meta.url),
+    ),
+    JSON.stringify(retentionReport, null, 2) + '\n',
+  );
+  console.log('Retention benchmark:', JSON.stringify(retentionReport));
 });

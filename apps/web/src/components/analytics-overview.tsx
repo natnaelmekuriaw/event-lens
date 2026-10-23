@@ -141,6 +141,9 @@ export function AnalyticsOverviewPage({
             <Link href={`${base}/conversion-paths`}>Conversion paths</Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href={`${base}/retention`}>Retention</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href={base}>Settings</Link>
           </Button>
         </div>

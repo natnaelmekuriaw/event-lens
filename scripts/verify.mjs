@@ -186,7 +186,7 @@ async function verify() {
     progress('Apply migrations to the isolated test database');
     await pnpm(['db:migrate'], testEnv);
     progress(
-      'Run management, event, analytics, and conversion path integration tests',
+      'Run management, event, analytics, conversion path, and retention integration tests',
     );
     await pnpm(['test:integration'], testEnv);
     if (browserChannel) {
@@ -202,7 +202,7 @@ async function verify() {
       ]);
     }
     progress(
-      'Run browser journeys and ingestion and analytics benchmarks with isolated API, worker, and demo servers',
+      'Run browser journeys and all analytics benchmarks with isolated API, worker, and demo servers',
     );
     await pnpm(['test:e2e'], testEnv);
   } catch (error) {
@@ -268,7 +268,7 @@ async function verify() {
   if (failures.length)
     throw new AggregateError(failures, 'Verification failed');
   console.log(
-    '\nVerification and benchmarks passed. Results: .tmp/benchmark-ingestion.json, .tmp/benchmark-analytics.json, and .tmp/benchmark-conversion-paths.json.',
+    '\nVerification and benchmarks passed. Results: .tmp/benchmark-ingestion.json, .tmp/benchmark-analytics.json, .tmp/benchmark-conversion-paths.json, and .tmp/benchmark-retention.json.',
   );
 }
 

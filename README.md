@@ -4,8 +4,8 @@ EventLens is a self-hosted product analytics platform for understanding what use
 do, which features they use, and where they drop off.
 
 EventLens includes account and project management, browser and Node event
-collection, durable ingestion, event exploration, analytics, and conversion paths.
-Cohort retention remains a later phase.
+collection, durable ingestion, event exploration, analytics, conversion paths,
+and daily cohort retention.
 
 ## Current features
 
@@ -21,6 +21,8 @@ Cohort retention remains a later phase.
 - Project analytics with trends, active users, top events, and activity timelines.
 - Saved conversion paths with ordered event steps, optional property filters,
   completion windows, and exact conversion counts.
+- Daily retention cohorts with project-local calendar days, exact return counts,
+  independent entry/return filters, and unavailable incomplete days.
 - GalaxyBalls demo, migrations, health endpoints, CI, and one verification script.
 
 Public signup is disabled. Invitation links are shared privately; EventLens does
@@ -133,6 +135,7 @@ against this revision; no performance figures are claimed here.
 Read the [phase plan](docs/plan.md), [architecture](docs/architecture.md),
 [event semantics and operations](docs/events.md), [analytics counting rules](docs/analytics.md),
 [conversion path rules](docs/conversion-paths.md),
+[retention rules](docs/retention.md),
 [self-hosting guide](docs/self-hosting.md),
 [contribution rules](CONTRIBUTING.md), and [security notes](SECURITY.md).
 

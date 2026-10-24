@@ -10,6 +10,8 @@ export function createDatabase(connectionString: string): PrismaClient {
       max: 10,
       connectionTimeoutMillis: 5000,
       idleTimeoutMillis: 30000,
+      statement_timeout: 10000,
+      lock_timeout: 1000,
     }),
   });
 }

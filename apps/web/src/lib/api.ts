@@ -19,7 +19,9 @@ export async function api<T>(
     ...(options.body !== undefined
       ? { body: JSON.stringify(options.body) }
       : {}),
-    signal: options.signal ?? AbortSignal.timeout(15000),
+    signal: options.signal
+      ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)])
+      : AbortSignal.timeout(15000),
   });
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {

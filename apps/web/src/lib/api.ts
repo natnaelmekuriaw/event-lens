@@ -11,18 +11,29 @@ export async function api<T>(
   path: string,
   options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<T> {
-  const response = await fetch(`/api/v1${path}`, {
-    method: options.method ?? 'GET',
-    credentials: 'same-origin',
-    cache: 'no-store',
-    headers: { 'Content-Type': 'application/json' },
-    ...(options.body !== undefined
-      ? { body: JSON.stringify(options.body) }
-      : {}),
-    signal: options.signal
-      ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)])
-      : AbortSignal.timeout(15000),
-  });
+  const method = options.method ?? 'GET';
+  const request = () =>
+    fetch(`/api/v1${path}`, {
+      method,
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      ...(options.body !== undefined
+        ? { body: JSON.stringify(options.body) }
+        : {}),
+      signal: options.signal
+        ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)])
+        : AbortSignal.timeout(15000),
+    });
+  let response = await request();
+  if (
+    method.toUpperCase() === 'GET' &&
+    response.status === 500 &&
+    (await response.clone().text()) === 'Internal Server Error'
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    response = await request();
+  }
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const message =

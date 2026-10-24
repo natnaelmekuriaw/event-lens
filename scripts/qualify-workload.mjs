@@ -40,10 +40,13 @@ try {
     .getSetCookie()
     .map((value) => value.split(';')[0])
     .join('; ');
-  const workspaces = await (
-    await fetch(base + '/api/v1/workspaces', { headers: { Cookie: cookie } })
-  ).json();
-  const workspaceId = workspaces.items[0].id;
+  const workspaceResponse = await fetch(base + '/api/v1/workspaces', {
+    headers: { Cookie: cookie },
+  });
+  assert.equal(workspaceResponse.status, 200);
+  const workspaces = await workspaceResponse.json();
+  assert.ok(Array.isArray(workspaces) && workspaces[0]?.id);
+  const workspaceId = workspaces[0].id;
   const created = await fetch(
     `${base}/api/v1/workspaces/${workspaceId}/projects`,
     {

@@ -26,13 +26,3 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY --from=build --chown=node:node /app /app
 USER node
-
-FROM runtime AS api
-CMD ["node", "apps/api/dist/main.js"]
-FROM runtime AS worker
-CMD ["node", "apps/worker/dist/main.js"]
-FROM runtime AS web
-CMD ["node", "apps/web/node_modules/next/dist/bin/next", "start", "apps/web", "--hostname", "0.0.0.0"]
-FROM runtime AS migrate
-WORKDIR /app/packages/database
-CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]

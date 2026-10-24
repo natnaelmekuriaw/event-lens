@@ -282,11 +282,11 @@ export default defineConfig({schema:${JSON.stringify(fileURLToPath(new URL('../p
       await upgrade.end();
     }
 
-    progress(
-      'Build and start production containers with an isolated HTTPS origin',
-    );
+    progress('Build one shared production runtime image');
     await admin.query(`CREATE DATABASE "${id}_deploy"`);
-    await compose(['up', '-d', '--build', '--wait'], { timeoutMs: 1200000 });
+    await compose(['build', 'migrate'], { timeoutMs: 1200000 });
+    progress('Start production containers with an isolated HTTPS origin');
+    await compose(['up', '-d', '--no-build', '--wait'], { timeoutMs: 600000 });
     await run(process.execPath, ['scripts/container-acceptance.mjs'], {
       env: {
         ...env,

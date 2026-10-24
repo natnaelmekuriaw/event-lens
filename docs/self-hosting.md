@@ -1,8 +1,10 @@
 # Self-hosting
 
 EventLens supports source deployment of the dashboard, API, and worker with
-PostgreSQL and Redis. Compose supplies PostgreSQL and Redis only; full application
-images and production orchestration remain later work.
+PostgreSQL and Redis. Base Compose supplies PostgreSQL/Redis; the production
+overlay adds API, worker, dashboard, migrations, and an HTTPS entry point.
+Follow [release operations](release-operations.md) for the container deployment
+and the required explicit volume selection before starting either Compose mode.
 
 ## Local installation
 
@@ -10,8 +12,9 @@ Follow the [README quickstart](../README.md#local-development). `pnpm setup`
 creates the root .env without overwriting an existing file. Add newly introduced
 settings from .env.example when upgrading an existing installation.
 
-Compose persists PostgreSQL in volume `eventlens-postgres` and Redis in
-`eventlens-redis`. Both listeners bind to loopback. Redis uses append-only
+Compose persists PostgreSQL/Redis in operator-selected external volumes using
+`EVENTLENS_POSTGRES_VOLUME` and `EVENTLENS_REDIS_VOLUME`. Existing deployments must
+select their actual existing mounts, which may have older names. Both listeners bind to loopback. Redis uses append-only
 persistence and noeviction; PostgreSQL receipts/outbox remain the recovery source
 for pending events even if Redis data is lost.
 
@@ -125,19 +128,22 @@ contains accounts, receipts/outbox, analytics events, and identity links. Pendin
 outbox work can reconstruct Redis delivery after restoration; Redis history is
 not the durable source of event payloads.
 
-Restoration replaces matching target objects. Stop API and worker processes and
-confirm the target database/project before using a trusted compatible backup:
+Restore into a fresh database with the compatible schema/application version.
+Stop API and worker processes and confirm the fresh target database/project before
+using a trusted compatible backup. Replace `FRESH_TARGET_DATABASE` explicitly:
 
 ```sh
 docker compose cp ./eventlens-backup.dump postgres:/tmp/eventlens-backup.dump
-docker compose exec -T postgres sh -c 'pg_restore --clean --if-exists --no-owner --exit-on-error -U "$POSTGRES_USER" -d "$POSTGRES_DB" /tmp/eventlens-backup.dump'
+docker compose exec -T postgres sh -c 'pg_restore --no-owner --exit-on-error -U "$POSTGRES_USER" -d FRESH_TARGET_DATABASE /tmp/eventlens-backup.dump'
 ```
 
 Use a fresh, isolated queue namespace after database restoration so queued
 receipt IDs from a different database history cannot collide. Set the same new
 EVENTLENS_QUEUE_PREFIX for restarted workers. Apply required migrations, restart
-services, check health/sign-in, and watch pending work drain. Routine verification
-does not prove backup restoration; rehearse this separately.
+services, check health/sign-in, and watch pending work drain. Invalidate restored
+sessions, invitations, and verification tokens before reopening traffic, as
+described in [release operations](release-operations.md#backup-restore-and-upgrades).
+The full verification flow now includes an isolated dump/restore acceptance case.
 
 ## Verification, benchmarks, and upgrades
 
@@ -147,9 +153,10 @@ The shared entry point is:
 pnpm verify
 ```
 
-It performs required setup, checks, tests, builds, and the applicable synthetic
-ingestion benchmark in order. The owner executes Docker, database operations, full
-runtime checks, and benchmarks. Never point verification at production.
+It creates disposable PostgreSQL/Redis infrastructure and runs checks, tests,
+builds, benchmarks, recovery, production containers, and an advisory review in order.
+It does not load or migrate the application database configuration. The owner
+executes Docker, database operations, full runtime checks, and benchmarks.
 
 Standalone ingestion measurement requires an explicitly selected disposable
 project and BENCHMARK_API_URL/BENCHMARK_PROJECT_KEY; an optional output path saves
@@ -159,4 +166,6 @@ They do not establish end-to-end worker latency or production capacity.
 Before upgrading, review migrations, take a backup, verify the revision in an
 isolated environment, and plan restore. Keep receipt tombstones/backups in your
 retention policy: analytics cleanup does not implement complete actor erasure.
-Password recovery and full production application packaging remain later work.
+Use the operator account recovery procedure and production Compose overlay in
+[release operations](release-operations.md). Measured workload results still need
+review on the release revision; no general production capacity is claimed.

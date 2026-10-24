@@ -13,10 +13,14 @@ Each phase is agreed before implementation; later phases remain proposals.
 | 6     | `feat/release`          | Recovery, measured performance, backup/restore, release polish                        | 20–32             |
 
 Phases 1–5 are authorized and the owner confirmed Phase 5 verification passed.
-Phase 6A is authorized on `feat/release`: audit self-hosting, recovery, shutdown,
-backup/restore, security boundaries, and release documentation; produce a
-prioritized checklist in 1–2 meaningful commits. The remaining Phase 6 stages
-require scope agreement after reviewing [the release audit](release-audit.md).
+Phase 6A audited self-hosting, recovery, shutdown, backup/restore, security
+boundaries, and release documentation in one commit. The owner then authorized
+combining 6B–6F into one implementation stage on `feat/release`, covering all nine
+findings in [the release audit](release-audit.md). Its expected outcome is a
+reviewable release candidate with one disposable verification command, production
+packaging, operator recovery, consistent bounded reports, and qualification scripts.
+The original combined estimate was 18–30 commits; the implementation fits about
+9 coherent commits. Runtime acceptance and publishing remain owner actions.
 Commit estimates are flexible: each commit represents a coherent
 change, and scope/count mismatches are reported rather than filled with churn.
 
@@ -85,5 +89,23 @@ coherent changes rather than the numerical target.
 - Propose follow-up stages with scope, branch, expected outcome, and flexible commit estimates before implementation.
 - Run focused documentation checks; Docker, database operations, the full final suite, benchmarks, and push remain owner actions.
 
-The audit is recorded in [release-audit.md](release-audit.md). Its findings are
-open release gates; this stage does not implement their fixes.
+The historical audit and current implementation status are recorded in
+[release-audit.md](release-audit.md). Runtime gates stay open until the owner runs
+the combined verification command on the release revision.
+
+## Combined Phase 6B–6F acceptance
+
+- Verification creates private disposable infrastructure and never loads the
+  application configuration. Existing deployment volumes require explicit selection.
+- Reports use consistent snapshots, bounded admission and execution, and client
+  cancellation preserves the request timeout.
+- Interactive operator recovery replaces existing account credentials and revokes
+  sessions. Restore acceptance checks auth invalidation and durable pending work.
+- Production containers include migrations, private service listeners, HTTPS,
+  health checks, shutdown deadlines, and dependency recovery rehearsals.
+- Qualification covers historical concurrent queries, expiry catch-up, sustained
+  ingestion, revision-linked results, and synthetic screenshot generation.
+- Current runbooks explain clean installation, upgrade failures, restoration,
+  recovery, operating limits, and disposable cleanup. CI retains nonsecret evidence.
+- The owner executes Docker, migrations, the full suite, benchmarks, and push.
+  Focused offline checks do not close these runtime gates or establish capacity.

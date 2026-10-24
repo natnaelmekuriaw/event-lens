@@ -9,7 +9,8 @@ and daily cohort retention.
 
 ## Current features
 
-- Protected first-owner setup, email/password sessions, and password changes.
+- Protected first-owner setup, email/password sessions, password changes, and
+  interactive operator account recovery.
 - Workspaces with owner, admin, and viewer roles; expiring private invitations.
 - Projects with reporting timezones and rotatable public ingestion keys.
 - TypeScript SDK with explicit tracking and identity, bounded batches, retries,
@@ -46,6 +47,14 @@ Run the following from the EventLens repository root:
 ```sh
 pnpm install
 pnpm setup
+```
+
+Select and preserve your storage volumes using the
+[storage setup instructions](docs/release-operations.md#existing-installations-select-storage-explicitly)
+before starting Compose. New installations create uniquely named external volumes;
+upgrades select the existing mounted volumes explicitly. Then continue:
+
+```sh
 docker compose up -d --wait postgres redis
 pnpm db:generate
 pnpm db:migrate
@@ -110,13 +119,20 @@ and benchmarks through the shared entry point:
 pnpm verify
 ```
 
-It reports progress, stops on failure, and uses isolated test state. It requires
+It reports progress, stops on failure, and creates disposable infrastructure without
+loading the application `.env` or migrating its database. It requires
 Docker and access to the package registry and browser downloads. Set
-`PLAYWRIGHT_CHANNEL=chrome` or `msedge` in the environment or local `.env`
+`PLAYWRIGHT_CHANNEL=chrome` or `msedge` in the terminal environment
 to use an installed browser. Focused offline checks can run during implementation.
 
-Full runtime checks and benchmark measurements require executing this command
-against this revision; no performance figures are claimed here.
+Full runtime checks, production HTTPS/recovery rehearsals, dependency advisory
+checks, and benchmark measurements require executing this command against this
+revision. No unexecuted measurements or production capacity claims are supplied.
+The flow reserves ports 3000–3003 and 8080/8443; database ports are dynamic.
+
+For the supported container deployment, account recovery, backup/restore, and
+upgrade procedures, see [release operations](docs/release-operations.md).
+CI retains synthetic feature screenshots in its verification artifact for review.
 
 ## Repository guide
 
@@ -137,6 +153,7 @@ Read the [phase plan](docs/plan.md), [architecture](docs/architecture.md),
 [conversion path rules](docs/conversion-paths.md),
 [retention rules](docs/retention.md),
 [self-hosting guide](docs/self-hosting.md),
+[performance qualification](docs/performance.md),
 [contribution rules](CONTRIBUTING.md), and [security notes](SECURITY.md).
 
 ## License

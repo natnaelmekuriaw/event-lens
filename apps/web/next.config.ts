@@ -3,7 +3,8 @@ import { loadEnvFile } from 'node:process';
 import type { NextConfig } from 'next';
 
 const environmentFile = new URL('../../.env', import.meta.url);
-if (existsSync(environmentFile)) loadEnvFile(environmentFile);
+if (process.env.TEST_DATABASE_ISOLATED !== '1' && existsSync(environmentFile))
+  loadEnvFile(environmentFile);
 
 const config: NextConfig = {
   poweredByHeader: false,

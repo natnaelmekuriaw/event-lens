@@ -1,5 +1,6 @@
 import { defineAnalyticsCases } from './analytics-cases.js';
 import { defineRetentionCases } from './retention-cases.js';
+import { defineReleaseCases } from './release-cases.js';
 import { defineConversionPathCases } from './conversion-path-cases.js';
 import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -351,4 +352,5 @@ describe('management API against isolated PostgreSQL', () => {
     otherWorkspaceId,
     viewerEmail,
   }));
+  defineReleaseCases(() => ({ app, base, workspaceId }));
 });

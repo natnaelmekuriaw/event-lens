@@ -3,6 +3,9 @@ packages:
   - packages/*
   - examples/*
 minimumReleaseAge: 1440
+networkConcurrency: 8
+fetchRetries: 5
+fetchTimeout: 300000
 overrides:
   # Remove when Nest/Express resolve these patched versions themselves.
   'body-parser@>=2.0.0 <2.4.0': 2.4.0

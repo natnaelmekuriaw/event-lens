@@ -5,15 +5,17 @@ import { createDatabase } from '../packages/database/dist/index.js';
 import {
   processReceipt,
   eventQueue,
+  eventJobId,
   dispatchOutbox,
 } from '../packages/pipeline/dist/index.js';
 import { recoverAccount } from '../apps/api/dist/auth/recovery.js';
 
+const restoreDatabase = new URL(process.env.DATABASE_URL).pathname.slice(1);
 if (
   process.env.TEST_DATABASE_ISOLATED !== '1' ||
-  !/^\/eventlens_verify_[0-9]+_[a-f0-9]{12}_restore$/.test(
-    new URL(process.env.DATABASE_URL).pathname,
-  )
+  !/^eventlens_verify_[0-9]+_[a-f0-9]{12}_restore$/.test(restoreDatabase) ||
+  process.env.EVENTLENS_QUEUE_PREFIX !== restoreDatabase ||
+  new URL(process.env.REDIS_URL).hostname !== '127.0.0.1'
 )
   throw new Error('Restore acceptance requires an isolated restore database');
 const db = createDatabase(process.env.DATABASE_URL);
@@ -73,11 +75,25 @@ try {
   const duplicate = await request('/v1/ingest', 'POST', input);
   assert.equal(duplicate.status, 202);
   assert.equal((await duplicate.json()).duplicates, 1);
+  const jobId = eventJobId({
+    receiptId: process.env.RELEASE_RECEIPT_ID,
+    generation: 0,
+  });
+  await db.eventOutbox.update({
+    where: { receiptId: process.env.RELEASE_RECEIPT_ID },
+    data: { nextDispatchAt: new Date(0) },
+  });
   await dispatchOutbox(db, queue);
-  // Redis is a disposable dedicated instance; erase actual queue state before reconstructing it.
-  await (await queue.client).flushdb();
-  await db.eventOutbox.updateMany({ data: { nextDispatchAt: new Date(0) } });
+  assert.ok(await queue.getJob(jobId));
+  // Erase this rehearsal queue, then reconstruct its job from the durable outbox.
+  await queue.obliterate();
+  assert.ok(!(await queue.getJob(jobId)));
+  await db.eventOutbox.update({
+    where: { receiptId: process.env.RELEASE_RECEIPT_ID },
+    data: { nextDispatchAt: new Date(0) },
+  });
   await dispatchOutbox(db, queue);
+  assert.ok(await queue.getJob(jobId));
   await processReceipt(db, {
     receiptId: process.env.RELEASE_RECEIPT_ID,
     generation: 0,

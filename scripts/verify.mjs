@@ -3,7 +3,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { run, interrupt } from './process.mjs';
+import { run, interrupt, withPnpmOnPath } from './process.mjs';
 import { rehearseRelease } from './release-rehearsal.mjs';
 import { stampEvidence } from './evidence.mjs';
 
@@ -41,7 +41,10 @@ const dockerEnv = {
 };
 const compose = (args, options = {}) =>
   run('docker', [...composeArgs, ...args], { ...options, env: dockerEnv });
-const pnpm = (args, env) => run(process.execPath, [cli, ...args], { env });
+const pnpm = (args, env) =>
+  run(process.execPath, [cli, ...args], {
+    env: withPnpmOnPath(env ?? process.env),
+  });
 const failures = [];
 let admin;
 let started = false;

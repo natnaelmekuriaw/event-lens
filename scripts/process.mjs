@@ -1,8 +1,18 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { delimiter, join } from 'node:path';
 import { clearTimeout } from 'node:timers';
 
 let current;
 let stopped = false;
+export function withPnpmOnPath(env = process.env) {
+  if (process.platform !== 'win32' || !env.APPDATA) return env;
+  const directory = join(env.APPDATA, 'npm');
+  if (!existsSync(join(directory, 'pnpm.cmd'))) return env;
+  const pathKey =
+    Object.keys(env).find((key) => key.toLowerCase() === 'path') ?? 'Path';
+  return { ...env, [pathKey]: `${directory}${delimiter}${env[pathKey] ?? ''}` };
+}
 function killTree(child, signal) {
   if (!child.pid || child.exitCode !== null) return;
   if (process.platform === 'win32') {

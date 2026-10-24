@@ -1,0 +1,90 @@
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_URL: ${APP_URL:?Set public HTTPS origin}
+  API_URL: http://api:3001
+  DATABASE_URL: ${EVENTLENS_DATABASE_URL:?Set internal PostgreSQL connection URL}
+  REDIS_URL: redis://redis:6379
+  EVENTLENS_QUEUE_PREFIX: ${EVENTLENS_QUEUE_PREFIX:-eventlens}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set a random secret}
+  BOOTSTRAP_TOKEN: ${BOOTSTRAP_TOKEN:?Set a random token}
+  EVENT_RETENTION_DAYS: ${EVENT_RETENTION_DAYS:-90}
+services:
+  migrate:
+    build: { context: ., target: migrate }
+    environment: *app-env
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+  api:
+    build: { context: ., target: api }
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3001/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  worker:
+    build: { context: ., target: worker }
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3002/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  web:
+    build: { context: ., target: web }
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:3001
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  proxy:
+    image: caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
+    environment:
+      EVENTLENS_HOST: ${EVENTLENS_HOST:-localhost}
+    ports:
+      - '${EVENTLENS_BIND:-127.0.0.1}:${EVENTLENS_HTTPS_PORT:-8443}:443'
+      - '${EVENTLENS_BIND:-127.0.0.1}:${EVENTLENS_HTTP_PORT:-8080}:80'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web: { condition: service_healthy }
+    restart: unless-stopped
+volumes:
+  caddy-data:
+  caddy-config:

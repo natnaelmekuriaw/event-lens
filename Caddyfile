@@ -1,0 +1,3 @@
+{$EVENTLENS_HOST:localhost} {
+  reverse_proxy web:3000
+}

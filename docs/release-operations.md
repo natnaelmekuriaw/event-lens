@@ -68,10 +68,13 @@ local dependencies, generated clients, and test artifacts.
 After DNS and firewall configuration, the operator runs:
 
 ```sh
-docker compose -p my-eventlens -f compose.yaml -f compose.production.yaml up -d --build --wait
+docker compose -p my-eventlens -f compose.yaml -f compose.production.yaml build migrate
+docker compose -p my-eventlens -f compose.yaml -f compose.production.yaml up -d --no-build --wait
 ```
 
-The one-shot `migrate` service completes before the API/worker start. Caddy exposes
+The build creates one project-specific runtime image shared by the migration, API,
+worker, and web services. The one-shot `migrate` service completes before the
+API/worker start. Caddy exposes
 the dashboard and same-origin API proxy, with automatic public TLS for a real
 domain. For local evaluation, defaults use `https://localhost:8443` and Caddy's
 local certificate authority. Trust that local CA only on your development device;
@@ -181,9 +184,15 @@ Redis, dynamic loopback database ports, and disposable project volumes. Web test
 reserve localhost ports 3000–3003; production acceptance also reserves 8080/8443.
 An occupied port is an error. The script checks its control-database sentinel on
 success/failure, terminates owned child process trees on interruption, and removes
-only its generated Compose project/volumes. POSIX hosts require `ps` for descendant
-discovery, including browser servers that create their own process groups. A hard OS kill may leave that project
-for manual inspection and cleanup; production external volumes are never selected.
+only its generated Compose project, volumes, and runtime image. POSIX hosts require
+`ps` for descendant discovery, including browser servers that create their own
+process groups. A hard OS kill may leave that project for manual inspection and
+cleanup; production external volumes are never selected.
+
+On Windows, verification checks for 10 GiB of free space on Docker Desktop's
+default disk-image drive before setup and again before building the runtime image.
+If the disk is elsewhere, check its free space before running the release rehearsal.
+
 The generated private `.tmp/eventlens_verify_....env` is retained if cleanup fails
 or the process is killed. After confirming the exact generated project name, use
 its printed environment-file path for cleanup:
@@ -193,6 +202,8 @@ docker compose -p GENERATED_PROJECT --env-file .tmp/GENERATED_PROJECT.env -f com
 ```
 
 This command is exclusively for the generated `eventlens_verify_...` project.
+If its runtime image was built, remove only that image with
+`docker image rm GENERATED_PROJECT-runtime:local` after the containers stop.
 Keep the recovery file private and remove it after that disposable project is gone.
 
 The ordered flow includes offline checks, integration/browser tests, historical

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { run, interrupt, withPnpmOnPath } from './process.mjs';
 import { rehearseRelease } from './release-rehearsal.mjs';
 import { stampEvidence } from './evidence.mjs';
+import { requireDockerSpace } from './docker-space.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = process.env.npm_execpath;
@@ -63,6 +64,7 @@ try {
   const channel = process.env.PLAYWRIGHT_CHANNEL;
   if (channel && !['chrome', 'msedge'].includes(channel))
     throw new Error('Unsupported PLAYWRIGHT_CHANNEL');
+  await requireDockerSpace();
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
   if (process.platform !== 'win32')
@@ -221,11 +223,19 @@ try {
     await admin.end().catch((error) => failures.push(error));
   }
   if (started) {
-    progress('Remove only this disposable Docker project and its volumes');
+    progress('Remove only this disposable Docker project, volumes, and image');
     try {
       await compose(['down', '--volumes', '--remove-orphans'], {
         cleanup: true,
       });
+      const image = `${id}-runtime:local`;
+      const builtImage = await run(
+        'docker',
+        ['image', 'ls', '--quiet', '--filter', `reference=${image}`],
+        { capture: true, cleanup: true },
+      );
+      if (builtImage)
+        await run('docker', ['image', 'rm', image], { cleanup: true });
       cleanupComplete = true;
     } catch (error) {
       failures.push(error);

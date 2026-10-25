@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile, cp } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { run } from './process.mjs';
+import { requireDockerSpace } from './docker-space.mjs';
 
 export async function rehearseRelease({
   env,
@@ -282,6 +283,7 @@ export default defineConfig({schema:${JSON.stringify(fileURLToPath(new URL('../p
       await upgrade.end();
     }
 
+    await requireDockerSpace();
     progress('Build one shared production runtime image');
     await admin.query(`CREATE DATABASE "${id}_deploy"`);
     await compose(['build', 'migrate'], { timeoutMs: 1200000 });

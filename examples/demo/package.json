@@ -13,6 +13,6 @@
     "@eventlens/sdk": "workspace:*"
   },
   "devDependencies": {
-    "vite": "8.1.6"
+    "vite": "8.3.5"
   }
 }

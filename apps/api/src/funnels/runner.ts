@@ -5,6 +5,7 @@ import type {
   FunnelResult,
 } from '@eventlens/contracts';
 import { canonicalActor } from '../analytics/query.js';
+import { withReport } from '../analytics/report.js';
 import { FunnelCounter, type FunnelEvent } from './counter.js';
 
 interface EventRow extends Omit<FunnelEvent, 'properties'> {
@@ -18,13 +19,15 @@ export async function runFunnel(
   definition: FunnelDefinitionInput,
   range: FunnelRange,
 ): Promise<FunnelResult> {
-  const counter = new FunnelCounter(definition, range);
-  const names = [...new Set(definition.steps.map((step) => step.name))];
-  const asOf = new Date();
-  let cursor: { time: Date; eventId: string } | undefined;
-  for (;;) {
-    const rows = await db.$queryRaw<EventRow[]>(
-      Prisma.sql`SELECT
+  return withReport(db, async (tx, checkBudget) => {
+    const counter = new FunnelCounter(definition, range);
+    const names = [...new Set(definition.steps.map((step) => step.name))];
+    const asOf = new Date();
+    let cursor: { time: Date; eventId: string } | undefined;
+    for (;;) {
+      checkBudget();
+      const rows = await tx.$queryRaw<EventRow[]>(
+        Prisma.sql`SELECT
         ${canonicalActor} AS "actor",
         e."eventId",
         e."type",
@@ -53,15 +56,16 @@ export async function runFunnel(
         }
       ORDER BY e."occurredAt" ASC, e."eventId" ASC
       LIMIT ${PAGE_SIZE}`,
-    );
-    for (const row of rows)
-      counter.consume({
-        ...row,
-        properties: row.properties as FunnelEvent['properties'],
-      });
-    if (rows.length < PAGE_SIZE) break;
-    const last = rows.at(-1)!;
-    cursor = { time: last.occurredAt, eventId: last.eventId };
-  }
-  return counter.result(id, asOf);
+      );
+      for (const row of rows)
+        counter.consume({
+          ...row,
+          properties: row.properties as FunnelEvent['properties'],
+        });
+      if (rows.length < PAGE_SIZE) break;
+      const last = rows.at(-1)!;
+      cursor = { time: last.occurredAt, eventId: last.eventId };
+    }
+    return counter.result(id, asOf);
+  });
 }

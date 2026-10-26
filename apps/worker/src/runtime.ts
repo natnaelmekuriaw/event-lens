@@ -125,14 +125,44 @@ export class WorkerRuntime implements OnModuleInit, OnModuleDestroy {
       throw new Error('DISPATCH_STALE');
     await this.db.$queryRaw`SELECT 1`;
     await this.queue.getJobCounts('waiting', 'active', 'failed');
-    return { status: 'ok', database: 'ready', queue: 'ready' };
+    const oldest = await this.db.eventReceipt.findFirst({
+      where: { status: 'pending' },
+      orderBy: { receivedAt: 'asc' },
+      select: { receivedAt: true },
+    });
+    const expired = await this.db.analyticsEvent.findFirst({
+      where: {
+        receivedAt: {
+          lt: new Date(Date.now() - this.retentionDays * 86400000),
+        },
+      },
+      orderBy: { receivedAt: 'asc' },
+      select: { receivedAt: true },
+    });
+    return {
+      status: 'ok',
+      database: 'ready',
+      queue: 'ready',
+      oldestPendingAgeSeconds: oldest
+        ? Math.floor((Date.now() - oldest.receivedAt.getTime()) / 1000)
+        : 0,
+      oldestExpiredAgeSeconds: expired
+        ? Math.floor((Date.now() - expired.receivedAt.getTime()) / 1000)
+        : 0,
+    };
   }
   async onModuleDestroy() {
     this.stopping = true;
     if (this.timer) clearInterval(this.timer);
-    await this.current;
-    await this.worker?.close();
-    await this.queue.close();
-    await this.db.$disconnect();
+    try {
+      await this.current;
+      await this.worker?.close();
+    } finally {
+      try {
+        await this.queue.close();
+      } finally {
+        await this.db.$disconnect();
+      }
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@eventlens/database';
 import type { RetentionQuery, RetentionResult } from '@eventlens/contracts';
 import { DatabaseService } from '../database.service.js';
+import { withReport } from '../analytics/report.js';
 import { AccessService } from '../workspaces/access.service.js';
 import { canonicalActor } from '../analytics/query.js';
 import { cohortTable, type RetentionRow } from './cohorts.js';
@@ -33,7 +34,8 @@ export class RetentionService {
     if (!project) throw new NotFoundException('Project not found');
     const timezone = project.timezone;
     const asOf = new Date();
-    const rows = await this.db.client.$queryRaw<RetentionRow[]>(Prisma.sql`
+    const rows = await withReport(this.db.client, (tx) =>
+      tx.$queryRaw<RetentionRow[]>(Prisma.sql`
       WITH scoped AS MATERIALIZED (
         SELECT ${canonicalActor} AS actor, e."name", e."properties",
           (e."occurredAt" AT TIME ZONE ${timezone}::text)::date AS day
@@ -62,7 +64,8 @@ export class RetentionService {
         AND r.day > e.cohort AND r.day <= e.cohort + ${query.days}::int
       GROUP BY e.cohort, r.day
       ORDER BY date, day
-    `);
+    `),
+    );
     return {
       from: query.from,
       to: query.to,

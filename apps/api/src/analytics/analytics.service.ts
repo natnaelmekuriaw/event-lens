@@ -15,6 +15,7 @@ import {
   eventSelection,
 } from './query.js';
 import { bucketDates } from './buckets.js';
+import { withReport } from './report.js';
 
 interface CountRow {
   totalEvents: bigint;
@@ -69,7 +70,8 @@ export class AnalyticsService {
   ): Promise<AnalyticsOverview> {
     const timezone = await this.timezone(userId, workspaceId, projectId);
     const selected = eventSelection(projectId, query, true);
-    const [summary, series, top] = await this.db.client.$transaction(
+    const [summary, series, top] = await withReport(
+      this.db.client,
       async (tx) => {
         const [summary] = await tx.$queryRaw<CountRow[]>(
           Prisma.sql`SELECT COUNT(*)::bigint AS "totalEvents",
@@ -95,10 +97,6 @@ export class AnalyticsService {
             LIMIT 10`,
         );
         return [summary, series, top] as const;
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
-        timeout: 15000,
       },
     );
     const byDate = new Map(series.map((row) => [row.date, row]));
@@ -129,22 +127,21 @@ export class AnalyticsService {
     query: ActivityQuery,
   ): Promise<Page<StoredEvent>> {
     await this.timezone(userId, workspaceId, projectId);
-    const selected = eventSelection(projectId, query, false);
-    const actor = activityActorFilter(query);
-    let cursor: { id: string; occurredAt: Date } | undefined;
-    if (query.cursor) {
-      const [found] = await this.db.client.$queryRaw<
-        { id: string; occurredAt: Date }[]
-      >(
-        Prisma.sql`SELECT e."id", e."occurredAt"
+    return withReport(this.db.client, async (tx) => {
+      const selected = eventSelection(projectId, query, false);
+      const actor = activityActorFilter(query);
+      let cursor: { id: string; occurredAt: Date } | undefined;
+      if (query.cursor) {
+        const [found] = await tx.$queryRaw<{ id: string; occurredAt: Date }[]>(
+          Prisma.sql`SELECT e."id", e."occurredAt"
           ${selected} ${actor}
           AND e."id" = ${query.cursor}::uuid`,
-      );
-      if (!found) throw new NotFoundException('Activity cursor not found');
-      cursor = found;
-    }
-    const rows = await this.db.client.$queryRaw<EventRow[]>(
-      Prisma.sql`SELECT e.*
+        );
+        if (!found) throw new NotFoundException('Activity cursor not found');
+        cursor = found;
+      }
+      const rows = await tx.$queryRaw<EventRow[]>(
+        Prisma.sql`SELECT e.*
         ${selected} ${actor}
         ${
           cursor
@@ -154,16 +151,18 @@ export class AnalyticsService {
         }
         ORDER BY e."occurredAt" DESC, e."id" DESC
         LIMIT ${query.limit + 1}`,
-    );
-    return {
-      items: rows.slice(0, query.limit).map((row) => ({
-        ...row,
-        type: row.type as StoredEvent['type'],
-        properties: row.properties as StoredEvent['properties'],
-        occurredAt: row.occurredAt.toISOString(),
-        receivedAt: row.receivedAt.toISOString(),
-      })),
-      nextCursor: rows.length > query.limit ? rows[query.limit - 1]!.id : null,
-    };
+      );
+      return {
+        items: rows.slice(0, query.limit).map((row) => ({
+          ...row,
+          type: row.type as StoredEvent['type'],
+          properties: row.properties as StoredEvent['properties'],
+          occurredAt: row.occurredAt.toISOString(),
+          receivedAt: row.receivedAt.toISOString(),
+        })),
+        nextCursor:
+          rows.length > query.limit ? rows[query.limit - 1]!.id : null,
+      };
+    });
   }
 }

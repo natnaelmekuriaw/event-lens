@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { WorkerRuntime } from './runtime.js';
+import { installShutdownDeadline } from '@eventlens/pipeline';
 
 @Controller('health')
 class HealthController {
@@ -32,4 +33,5 @@ const port = Number(process.env.WORKER_PORT ?? 3002);
 if (!Number.isInteger(port) || port < 1 || port > 65535)
   throw new Error('Invalid WORKER_PORT');
 app.enableShutdownHooks();
+installShutdownDeadline();
 await app.listen(port, '127.0.0.1');

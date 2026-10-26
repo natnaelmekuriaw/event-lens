@@ -1,5 +1,6 @@
 import { defineAnalyticsCases } from './analytics-cases.js';
 import { defineRetentionCases } from './retention-cases.js';
+import { defineReleaseCases } from './release-cases.js';
 import { defineConversionPathCases } from './conversion-path-cases.js';
 import { defineEventPipelineCases } from './pipeline-cases.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -143,6 +144,20 @@ describe('management API against isolated PostgreSQL', () => {
       headers: { Authorization: `Bearer ${publicKey}` },
     });
     expect(result.status).toBe(401);
+  });
+  it('lists workspaces as an array for a signed-in member', async () => {
+    const response = await request(
+      '/v1/workspaces',
+      'GET',
+      undefined,
+      ownerCookie,
+    );
+    expect(response.status).toBe(200);
+    const workspaces = await response.json();
+    expect(Array.isArray(workspaces)).toBe(true);
+    expect(workspaces.map((workspace: { id: string }) => workspace.id)).toEqual(
+      expect.arrayContaining([workspaceId, otherWorkspaceId]),
+    );
   });
   it('returns project metadata without credential hashes', async () => {
     const response = await request(
@@ -351,4 +366,5 @@ describe('management API against isolated PostgreSQL', () => {
     otherWorkspaceId,
     viewerEmail,
   }));
+  defineReleaseCases(() => ({ app, base, workspaceId }));
 });

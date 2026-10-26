@@ -3,11 +3,49 @@
 Audited baseline: `d0066d1` on `origin/main`, including Phase 5. Branch:
 `feat/release`. The owner reported Phase 5 full verification passed.
 
-This stage reviews repository source, tests, configuration, and operating guides.
-It produces release gates and proposed implementation stages. It does not change
-application behavior or claim that deployment, restore, failure injection, or
-capacity tests have passed. No dependency advisory scan or penetration test was
-performed. Later stages require scope approval before implementation.
+The original audit reviewed repository source, tests, configuration, and operating
+guides. The findings below describe that baseline, with historical line references;
+they are not claims about the current implementation. The owner subsequently
+authorized combining all remaining stages on this branch. Deployment, restore,
+failure injection, and capacity acceptance still require the owner's full run.
+No penetration test has been performed.
+
+## Combined implementation status
+
+| Gate | Implemented                                                                                                                                                    | Acceptance still requiring owner execution                                                                    |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| R1   | Generated Compose project, credentials, databases and volumes; private recovery file; no application `.env` loading; explicit external deployment volumes      | Successful and interrupted disposable runs; inspect existing volume selection before deployment               |
+| R2   | Repeatable-read conversion scan and multi-page identity regression fixture                                                                                     | Execute database regression                                                                                   |
+| R3   | Hidden interactive recovery input, maintained credential hash, session revocation, membership preservation                                                     | Execute integration and restored-account acceptance                                                           |
+| R4   | Fresh dump/restore, table manifest, restored auth invalidation and read/duplicate checks; Phase 2 schema upgrade and transactional DDL failure probe           | Execute rehearsal and inspect revision/duration artifact; arbitrary nontransactional rollback is not provided |
+| R5   | Shutdown deadline and finally-based cleanup; forced worker kill at a lock checkpoint, Redis outage/state erasure, restart/drain rehearsal; process-tree runner | Execute deployed failure tests and interruption checks on supported Windows/Linux hosts                       |
+| R6   | Four report slots, database/application deadlines, timeout responses, combined browser cancellation/timeout                                                    | Execute slow-statement regression; focused browser-helper unit checks cover both signals                      |
+| R7   | Non-root application image targets, migration ordering, private listeners, immutable image references, Caddy HTTPS and acceptance flow                         | Build and execute actual Compose configuration                                                                |
+| R8   | 100k-event historical fixture, concurrent reports, cleanup catch-up, sustained HTTPS ingestion, backlog age metrics, revision/host metadata                    | Run and review measurements before publishing capacity limits                                                 |
+| R9   | Updated feature/security docs, deployment/recovery/performance guides, screenshot generation and CI artifact retention, pinned actions, dependency updates     | Review generated screenshots/artifacts and choose release tag after verification                              |
+
+Checklist items below remain release gates until runtime evidence is reviewed.
+See [deployment and recovery](release-operations.md) and
+[performance qualification](performance.md) for the implemented procedure and its
+limits. A clean dependency scan is advisory evidence, not a security audit.
+
+### Focused checks on 2026-10-24
+
+- Formatting, lint, workspace TypeScript, and API/worker/dashboard/demo builds passed.
+- All 60 unit tests in 13 files passed, including timeout/cancellation, report-slot
+  release, and process-runner interruption/cleanup behavior.
+- The new database regression fixture type-checks; script syntax and browser test
+  discovery passed. Discovery is not database or browser execution.
+- `pnpm audit --audit-level high` returned no known vulnerabilities after updating
+  demo Vite to 8.1.6, body-parser to 2.4.0, and Multer to 2.5.0. Narrow workspace
+  overrides cover upstream Nest/Express pins until their dependencies are updated.
+  See the upstream [body-parser advisory](https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828)
+  and [Multer advisory](https://github.com/expressjs/multer/security/advisories/GHSA-q7qp-rjg7-q26m).
+- Docker operations, migrations, integration/browser execution, restore/upgrade
+  rehearsals, interruption checks against live services, and benchmarks were not run.
+
+The owner runs `pnpm verify` and reviews the resulting evidence before declaring
+these runtime gates closed. Push and release publication remain pending.
 
 ## Existing foundations
 
@@ -187,10 +225,11 @@ outbox backlogs need qualification under sustained load.
       the release version/tag once all agreed gates pass. Publishing and pushing
       remain operator actions.
 
-## Proposed implementation stages
+## Original implementation breakdown
 
-Only **6A (this audit, 1–2 commits)** is authorized. All rows below are proposals
-on `feat/release`; estimates are flexible and exclude churn to reach a number.
+The owner authorized merging the following rows into one stage on `feat/release`.
+The original estimates total 18–30 commits; the combined implementation needs
+about 9 coherent commits, with no churn to reach the original number.
 
 | Stage | Scope                                                      | Expected outcome                                                                                 | Approximate commits |
 | ----- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------- |
@@ -204,8 +243,6 @@ For each accepted stage, extend the single `scripts/verify.mjs` flow with applic
 ordered checks. The owner runs Docker, database operations, the full final suite,
 benchmarks, and git push. Focused offline checks may run during implementation.
 
-Audit acceptance: source references resolve, priorities have concrete completion
-checks, and proposed follow-up stages are clearly distinguished from implemented
-work. Documentation formatting and whitespace checks are sufficient for this
-documentation-only stage. Runtime qualification remains pending even though the
-owner confirmed the existing Phase 5 verification passed.
+The audit was accepted as a source review. Combined implementation acceptance now
+uses the complete verification script; the earlier Phase 5 pass does not qualify
+the new release packaging or rehearsals.

@@ -1,8 +1,8 @@
 # Security
 
-EventLens is under active development. Phases 1 and 2 provide account/project
-management and an event pipeline. Review the limits below before exposing an
-installation.
+EventLens provides account/project management, durable event collection, analytics,
+conversion paths, and daily retention. Release verification also includes recovery
+and deployment qualification; execution evidence must pass for the release revision.
 
 ## Reporting an issue
 
@@ -26,8 +26,10 @@ behavior, and impact using synthetic examples.
   management permissions. Raw keys are shown once and only hashes are stored.
 
 Passwords must be 12–128 characters. Signed-in users can change their password.
-Email verification, email password reset, and an operator recovery procedure are
-not implemented. An invitation does not reset an existing account's password.
+Email verification and email password reset are not implemented. A privileged
+[operator recovery command](docs/release-operations.md#recover-an-existing-account)
+replaces an existing credential and revokes that account's sessions. Stop API
+traffic before recovery. An invitation does not reset an existing account's password.
 
 ## Untrusted event data
 
@@ -72,6 +74,10 @@ expire after 14 days; pending work is retained. Minimal receipt tombstones persi
 for deduplication. This does not implement complete actor erasure or a regulatory
 compliance policy; backups and deployment logs need their own policy.
 
-Full application container packaging, password recovery, erasure tooling, and
-measured production capacity remain later work. See [self-hosting](docs/self-hosting.md)
+Application container packaging and operator recovery are implemented; their
+acceptance checks run in the single verification flow. Complete actor erasure,
+enterprise identity recovery, and measured production capacity remain outside the
+current claims. Four concurrent report slots and database/query time budgets bound
+analytics load; a short client timeout does not imply all server work is free.
+See [release operations](docs/release-operations.md), [self-hosting](docs/self-hosting.md),
 and [event operations](docs/events.md).

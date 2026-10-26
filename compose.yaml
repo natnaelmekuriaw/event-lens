@@ -1,7 +1,7 @@
 name: eventlens
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:eee6c6e1b0894fa4fe0075eb054af9fd1cf39a35321c2d4110626cfe506411fb
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?Run pnpm setup}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run pnpm setup}
@@ -18,7 +18,7 @@ services:
       retries: 20
     restart: unless-stopped
   redis:
-    image: redis:8-alpine
+    image: redis:8-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     command: [redis-server, --appendonly, 'yes', --maxmemory-policy, noeviction]
     ports:
       - '127.0.0.1:6379:6379'
@@ -32,6 +32,8 @@ services:
     restart: unless-stopped
 volumes:
   postgres-data:
-    name: eventlens-postgres
+    name: ${EVENTLENS_POSTGRES_VOLUME:?Set the existing PostgreSQL volume name explicitly; see docs/release-operations.md}
+    external: true
   redis-data:
-    name: eventlens-redis
+    name: ${EVENTLENS_REDIS_VOLUME:?Set the existing Redis volume name explicitly; see docs/release-operations.md}
+    external: true

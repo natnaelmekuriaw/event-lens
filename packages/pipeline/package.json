@@ -16,7 +16,7 @@
   "dependencies": {
     "@eventlens/contracts": "workspace:*",
     "@eventlens/database": "workspace:*",
-    "bullmq": "6.4.0",
+    "bullmq": "6.4.1",
     "ioredis": "6.0.0"
   }
 }

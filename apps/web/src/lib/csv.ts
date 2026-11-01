@@ -2,6 +2,7 @@ import type {
   AnalyticsOverview,
   FunnelResult,
   RetentionResult,
+  StoredEvent,
 } from '@eventlens/contracts';
 
 type Cell = string | number | null;
@@ -100,6 +101,33 @@ export function retentionCsv(report: RetentionResult): string {
         report.asOf,
       ]),
     ),
+  ]);
+}
+
+export function eventsCsv(events: readonly StoredEvent[]): string {
+  return csv([
+    [
+      'event_id',
+      'name',
+      'type',
+      'occurred_at',
+      'received_at',
+      'anonymous_id',
+      'user_id',
+      'identity_conflict',
+      'properties_json',
+    ],
+    ...events.map((event) => [
+      event.eventId,
+      event.name,
+      event.type,
+      event.occurredAt,
+      event.receivedAt,
+      event.anonymousId,
+      event.userId,
+      String(event.identityConflict),
+      JSON.stringify(event.properties) ?? '',
+    ]),
   ]);
 }
 

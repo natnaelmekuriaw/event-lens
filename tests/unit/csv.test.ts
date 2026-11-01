@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { csv, retentionCsv } from '../../apps/web/src/lib/csv';
+import { csv, eventsCsv, retentionCsv } from '../../apps/web/src/lib/csv';
 
 describe('CSV export', () => {
   it('quotes text, preserves newlines, and neutralizes spreadsheet formulas', () => {
@@ -29,5 +29,25 @@ describe('CSV export', () => {
       ],
     });
     expect(output).toContain('"2026-01-01","3","1","",""');
+  });
+
+  it('guards actor identifiers and quotes event properties', () => {
+    const output = eventsCsv([
+      {
+        id: 'stored',
+        projectId: 'project',
+        eventId: 'event',
+        type: 'track',
+        name: 'signup',
+        occurredAt: '2026-01-01T00:00:00Z',
+        receivedAt: '2026-01-01T00:00:01Z',
+        anonymousId: '=SUM(1)',
+        userId: null,
+        identityConflict: false,
+        properties: { plan: '"pro"' },
+      },
+    ]);
+    expect(output).toContain('"\'=SUM(1)"');
+    expect(output).toContain('""plan""');
   });
 });

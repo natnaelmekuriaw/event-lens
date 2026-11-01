@@ -200,7 +200,7 @@ export function EventExplorer({
             Newest occurrence first. Times below use{' '}
             {project.data?.timezone ?? 'UTC'}. Filters use UTC.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               disabled={exporting || events.loading || Boolean(events.error)}
@@ -246,14 +246,16 @@ export function EventExplorer({
         ) : (
           events.data && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="min-w-[560px] w-full text-left text-sm">
                 <caption className="sr-only">Project events</caption>
                 <thead className="border-b text-stone-500">
                   <tr>
-                    <th className="py-3">Event</th>
-                    <th>Occurred</th>
-                    <th>Identity</th>
-                    <th>
+                    <th scope="col" className="py-3">
+                      Event
+                    </th>
+                    <th scope="col">Occurred</th>
+                    <th scope="col">Identity</th>
+                    <th scope="col">
                       <span className="sr-only">Details</span>
                     </th>
                   </tr>

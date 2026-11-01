@@ -16,6 +16,10 @@ import { FormMessage } from './form-message';
 import { ProcessingStatus } from './processing-status';
 import { api, errorMessage } from '../lib/api';
 import { downloadCsv, eventsCsv } from '../lib/csv';
+import {
+  collectEventExport,
+  EVENT_EXPORT_PAGE_SIZE,
+} from '../lib/event-export';
 
 export function EventExplorer({
   workspaceId,
@@ -82,23 +86,21 @@ export function EventExplorer({
     setExporting(true);
     setExportError(null);
     setExportNotice(null);
-    const collected: StoredEvent[] = [];
-    let nextCursor: string | null = null;
     try {
-      for (let pageNumber = 0; pageNumber < 10; pageNumber++) {
+      const exportData = await collectEventExport(async (cursor) => {
         const params = new URLSearchParams(filters);
-        params.set('limit', '100');
-        if (nextCursor) params.set('cursor', nextCursor);
-        const page = await api<Page<StoredEvent>>(`${base}/events?${params}`);
-        collected.push(...page.items);
-        nextCursor = page.nextCursor;
-        if (!nextCursor) break;
-      }
-      downloadCsv(`eventlens-events-${projectId}.csv`, eventsCsv(collected));
+        params.set('limit', String(EVENT_EXPORT_PAGE_SIZE));
+        if (cursor) params.set('cursor', cursor);
+        return api<Page<StoredEvent>>(`${base}/events?${params}`);
+      });
+      downloadCsv(
+        `eventlens-events-${projectId}.csv`,
+        eventsCsv(exportData.items),
+      );
       setExportNotice(
-        nextCursor
+        exportData.truncated
           ? 'Downloaded the first 1,000 matching events. Narrow the filters to export the rest.'
-          : `Downloaded ${collected.length} matching events.`,
+          : `Downloaded ${exportData.items.length} matching events.`,
       );
     } catch (error) {
       setExportError(errorMessage(error));

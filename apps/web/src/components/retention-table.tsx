@@ -2,7 +2,12 @@ import type { RetentionResult } from '@eventlens/contracts';
 
 export function RetentionTable({ report }: { report: RetentionResult }) {
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div
+      className="mt-5 overflow-x-auto"
+      role="region"
+      aria-label="Scrollable daily cohort table"
+      tabIndex={0}
+    >
       <table
         className="w-full border-collapse text-left text-sm"
         aria-label="Daily cohort retention"
@@ -13,7 +18,7 @@ export function RetentionTable({ report }: { report: RetentionResult }) {
         </caption>
         <thead>
           <tr>
-            <th scope="col" className="p-3">
+            <th scope="col" className="sticky left-0 bg-white p-3">
               Entry date
             </th>
             <th scope="col" className="p-3">
@@ -29,7 +34,10 @@ export function RetentionTable({ report }: { report: RetentionResult }) {
         <tbody>
           {report.cohorts.map((cohort) => (
             <tr key={cohort.date} className="border-t">
-              <th scope="row" className="whitespace-nowrap p-3 font-medium">
+              <th
+                scope="row"
+                className="sticky left-0 whitespace-nowrap bg-white p-3 font-medium"
+              >
                 {cohort.date}
               </th>
               <td className="p-3">{cohort.size.toLocaleString()}</td>

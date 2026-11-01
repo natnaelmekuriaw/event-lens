@@ -90,6 +90,7 @@ public project key, then start a game and complete a level. Open the project's
 batch committed to PostgreSQL; the worker makes it visible in the explorer.
 Open **Analytics** for trends or **Conversion paths** to save and inspect a
 sequence such as `game_started` → `level_completed`.
+See [the first-event guide](docs/first-event.md) if data does not appear.
 
 ## SDK
 

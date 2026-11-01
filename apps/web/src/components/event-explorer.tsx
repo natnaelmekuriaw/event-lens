@@ -14,6 +14,8 @@ import { Input } from './ui/input';
 import { Card } from './ui/card';
 import { FormMessage } from './form-message';
 import { ProcessingStatus } from './processing-status';
+import { api, errorMessage } from '../lib/api';
+import { downloadCsv, eventsCsv } from '../lib/csv';
 
 export function EventExplorer({
   workspaceId,
@@ -34,6 +36,9 @@ export function EventExplorer({
   const [cursors, setCursors] = useState<string[]>([]);
   const [live, setLive] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
   const cursor = cursors.at(-1);
   const events = useResource<Page<StoredEvent>>(
     `${base}/events?limit=25&${filters}${cursor ? '&cursor=' + cursor : ''}`,
@@ -72,6 +77,34 @@ export function EventExplorer({
     setFilters(query.toString());
     setCursors([]);
     setSelected(null);
+  }
+  async function exportFilteredEvents() {
+    setExporting(true);
+    setExportError(null);
+    setExportNotice(null);
+    const collected: StoredEvent[] = [];
+    let nextCursor: string | null = null;
+    try {
+      for (let pageNumber = 0; pageNumber < 10; pageNumber++) {
+        const params = new URLSearchParams(filters);
+        params.set('limit', '100');
+        if (nextCursor) params.set('cursor', nextCursor);
+        const page = await api<Page<StoredEvent>>(`${base}/events?${params}`);
+        collected.push(...page.items);
+        nextCursor = page.nextCursor;
+        if (!nextCursor) break;
+      }
+      downloadCsv(`eventlens-events-${projectId}.csv`, eventsCsv(collected));
+      setExportNotice(
+        nextCursor
+          ? 'Downloaded the first 1,000 matching events. Narrow the filters to export the rest.'
+          : `Downloaded ${collected.length} matching events.`,
+      );
+    } catch (error) {
+      setExportError(errorMessage(error));
+    } finally {
+      setExporting(false);
+    }
   }
   return (
     <>
@@ -168,6 +201,13 @@ export function EventExplorer({
             {project.data?.timezone ?? 'UTC'}. Filters use UTC.
           </p>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              disabled={exporting || events.loading || Boolean(events.error)}
+              onClick={exportFilteredEvents}
+            >
+              {exporting ? 'Preparing CSV…' : 'Export events CSV'}
+            </Button>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -184,6 +224,7 @@ export function EventExplorer({
             </Button>
           </div>
         </div>
+        <FormMessage error={exportError} success={exportNotice} />
         {events.loading ? (
           <p role="status" className="muted py-8">
             Loading events…

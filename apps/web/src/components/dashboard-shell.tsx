@@ -13,10 +13,22 @@ import { authClient } from '../lib/auth-client';
 import { Button } from './ui/button';
 import { FormMessage } from './form-message';
 
+function sectionFor(pathname: string): string {
+  if (pathname.endsWith('/analytics')) return 'Analytics';
+  if (pathname.endsWith('/events')) return 'Events';
+  if (pathname.endsWith('/conversion-paths')) return 'Conversion paths';
+  if (pathname.endsWith('/retention')) return 'Retention';
+  if (pathname.endsWith('/team')) return 'Team';
+  if (pathname === '/account') return 'Account';
+  if (/\/projects\/[^/]+$/.test(pathname)) return 'Project settings';
+  return 'Projects';
+}
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const session = authClient.useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const section = sectionFor(pathname);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   useEffect(() => {
     if (!session.isPending && !session.data && !session.error)
@@ -101,9 +113,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-white/70 px-4 py-4 sm:px-6 lg:px-10">
           <span className="text-sm text-stone-500">
             Product analytics /{' '}
-            <span className="text-stone-800">
-              {pathname === '/account' ? 'Account' : 'Projects'}
-            </span>
+            <span className="text-stone-800">{section}</span>
           </span>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-stone-600 sm:block">

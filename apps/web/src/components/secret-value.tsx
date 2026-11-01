@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -13,9 +13,14 @@ export function SecretValue({
   onDismiss: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => titleRef.current?.focus(), []);
   return (
     <Card className="my-6 border-emerald-300 bg-emerald-50/60">
-      <h2 className="font-semibold">{title}</h2>
+      <h2 ref={titleRef} tabIndex={-1} className="font-semibold">
+        {title}
+      </h2>
       <p className="muted mt-2">
         Save this value now. You can’t retrieve it after closing this panel.
       </p>
@@ -36,8 +41,10 @@ export function SecretValue({
             try {
               await navigator.clipboard.writeText(value);
               setCopied(true);
+              setCopyError(false);
             } catch {
               setCopied(false);
+              setCopyError(true);
             }
           }}
         >
@@ -50,6 +57,11 @@ export function SecretValue({
       <p role="status" className="sr-only">
         {copied ? 'Value copied to clipboard' : ''}
       </p>
+      {copyError && (
+        <p role="alert" className="mt-3 text-sm text-amber-900">
+          Copy failed. Select the value above and copy it manually.
+        </p>
+      )}
     </Card>
   );
 }

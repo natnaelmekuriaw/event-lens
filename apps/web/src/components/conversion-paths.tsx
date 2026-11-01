@@ -16,6 +16,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { FormMessage } from './form-message';
+import { conversionCsv, downloadCsv } from '../lib/csv';
 
 const blankStep = (): FunnelStep => ({ name: '' });
 const utcDate = (value: number) => new Date(value).toISOString().slice(0, 10);
@@ -442,6 +443,18 @@ export function ConversionPathsPage({
               ) : (
                 visibleResult && (
                   <>
+                    <Button
+                      variant="outline"
+                      className="mt-5"
+                      onClick={() =>
+                        downloadCsv(
+                          `eventlens-conversion-${selected.id}-${dates.from}-${dates.through}.csv`,
+                          conversionCsv(visibleResult),
+                        )
+                      }
+                    >
+                      Download results CSV
+                    </Button>
                     {visibleResult.entries === 0 && (
                       <p className="muted mt-6">
                         No people entered this path in the selected dates.

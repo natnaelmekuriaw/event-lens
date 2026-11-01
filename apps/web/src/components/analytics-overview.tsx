@@ -152,6 +152,11 @@ export function AnalyticsOverviewPage({
       <FormMessage
         error={filterError ?? project.error ?? projects.error ?? overview.error}
       />
+      {overview.error && (
+        <Button className="mt-3" variant="outline" onClick={overview.refresh}>
+          Try analytics again
+        </Button>
+      )}
       <Card>
         <form
           onSubmit={apply}

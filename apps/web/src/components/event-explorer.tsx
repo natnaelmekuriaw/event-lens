@@ -326,6 +326,15 @@ export function EventExplorer({
               </Button>
             </div>
             <FormMessage error={detail.error} />
+            {detail.error && (
+              <Button
+                className="mt-3"
+                variant="outline"
+                onClick={detail.refresh}
+              >
+                Try event details again
+              </Button>
+            )}
             {detail.loading ? (
               <p role="status">Loading event…</p>
             ) : (

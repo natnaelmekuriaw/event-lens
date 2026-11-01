@@ -12,6 +12,7 @@ import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
 import { FormMessage } from '../../../../../components/form-message';
 import { SecretValue } from '../../../../../components/secret-value';
+import { ProjectGettingStarted } from '../../../../../components/project-getting-started';
 import { useResource } from '../../../../../lib/use-resource';
 import { api, errorMessage } from '../../../../../lib/api';
 
@@ -98,6 +99,7 @@ function ProjectSettings({
       ) : (
         project.data && (
           <div className="mt-5 grid gap-6">
+            <ProjectGettingStarted base={path} canManage={allowed} />
             <Card>
               <h2 className="mb-5 font-semibold">General</h2>
               <form onSubmit={save} className="grid max-w-lg gap-5">

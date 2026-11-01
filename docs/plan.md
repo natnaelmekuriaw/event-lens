@@ -11,8 +11,16 @@ Each phase is agreed before implementation; later phases remain proposals.
 | 4     | `feat/conversion-paths` | Ordered conversion paths, saved definitions, builder, and results                     | 32–45             |
 | 5     | `feat/retention`        | Daily cohorts, return events, observation windows                                     | 32–48             |
 | 6     | `feat/release`          | Recovery, measured performance, backup/restore, release polish                        | 20–32             |
+| 7     | `feat/product-polish`   | First-run guidance, dashboard usability, report exports, and supporting checks       | About 34          |
 
-Phases 1–5 are authorized and the owner confirmed Phase 5 verification passed.
+Phase 7 is authorized as one stage on `feat/product-polish`, based on the merged
+release and dependency updates. It covers first-run guidance, dashboard usability,
+bounded report exports through existing member-only reads, and supporting checks
+and documentation. The target is 34 coherent commits; the final count follows
+actual changes rather than artificial splits. Docker, database operations, full
+verification, benchmarks, and push remain owner actions.
+
+Phases 1–5 were authorized and the owner confirmed Phase 5 verification passed.
 Phase 6A audited self-hosting, recovery, shutdown, backup/restore, security
 boundaries, and release documentation in one commit. The owner then authorized
 combining 6B–6F into one implementation stage on `feat/release`, covering all nine

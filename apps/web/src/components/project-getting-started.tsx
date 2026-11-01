@@ -38,11 +38,11 @@ export function ProjectGettingStarted({
           </p>
           <a
             className="mt-2 inline-block text-emerald-800 underline"
-            href="https://github.com/natnaelmekuriaw/EventLens/blob/main/docs/sdk.md"
+            href="https://github.com/natnaelmekuriaw/EventLens/blob/main/docs/first-event.md"
             target="_blank"
             rel="noreferrer"
           >
-            Read the SDK guide
+            Follow the first-event guide
           </a>
         </li>
         <li>

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   Page,
   Project,
@@ -43,6 +43,7 @@ export function EventExplorer({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const filterForm = useRef<HTMLFormElement>(null);
   const cursor = cursors.at(-1);
   const events = useResource<Page<StoredEvent>>(
     `${base}/events?limit=25&${filters}${cursor ? '&cursor=' + cursor : ''}`,
@@ -81,6 +82,7 @@ export function EventExplorer({
     setFilters(query.toString());
     setCursors([]);
     setSelected(null);
+    setExportNotice(null);
   }
   async function exportFilteredEvents() {
     setExporting(true);
@@ -172,6 +174,7 @@ export function EventExplorer({
       />
       <Card className="mt-6">
         <form
+          ref={filterForm}
           onSubmit={filter}
           className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-5"
         >
@@ -196,6 +199,20 @@ export function EventExplorer({
             <Input name="to" type="datetime-local" />
           </label>
           <Button>Apply filters</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              filterForm.current?.reset();
+              setFilters('');
+              setFilterError(null);
+              setCursors([]);
+              setSelected(null);
+              setExportNotice(null);
+            }}
+          >
+            Clear filters
+          </Button>
         </form>
         <div className="my-5 flex flex-wrap items-center justify-between gap-3">
           <p className="muted">

@@ -50,7 +50,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     );
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
-      <aside className="flex flex-col border-b border-stone-200 bg-[#eef0eb] p-5 lg:min-h-screen lg:border-b-0 lg:border-r">
+      <aside className="flex flex-col border-b border-stone-200 bg-[#eef0eb] p-4 sm:p-5 lg:min-h-screen lg:border-b-0 lg:border-r">
         <Link
           href="/"
           className="mb-7 flex items-center gap-3 px-2 text-lg font-semibold tracking-tight"
@@ -63,21 +63,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[.18em] text-stone-500">
           Workspace
         </p>
-        <nav aria-label="Main navigation" className="flex gap-2 lg:flex-col">
+        <nav
+          aria-label="Main navigation"
+          className="flex flex-wrap gap-2 lg:flex-col"
+        >
           {[
             { href: '/', label: 'Projects', icon: FolderKanban },
             { href: '/account', label: 'Account', icon: Settings },
-          ].map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={pathname === href ? 'page' : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${pathname === href ? 'bg-white font-semibold shadow-sm' : 'text-stone-600 hover:bg-white/60'}`}
-            >
-              <Icon size={17} aria-hidden="true" />
-              {label}
-            </Link>
-          ))}
+          ].map(({ href, label, icon: Icon }) => {
+            const active =
+              pathname === href ||
+              (href === '/' && pathname.startsWith('/workspaces/'));
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${active ? 'bg-white font-semibold shadow-sm' : 'text-stone-600 hover:bg-white/60'}`}
+              >
+                <Icon size={17} aria-hidden="true" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="mt-auto hidden rounded-xl border border-stone-200 bg-white/60 p-4 lg:block">
           <p className="text-sm font-medium">Your data stays yours.</p>
@@ -90,7 +98,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="flex items-center justify-between gap-4 border-b border-stone-200 bg-white/70 px-6 py-4 lg:px-10">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-white/70 px-4 py-4 sm:px-6 lg:px-10">
           <span className="text-sm text-stone-500">
             Product analytics /{' '}
             <span className="text-stone-800">
@@ -120,7 +128,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-6xl p-6 lg:p-10">
+        <main id="main" className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-10">
           <FormMessage error={signOutError} />
           {children}
         </main>

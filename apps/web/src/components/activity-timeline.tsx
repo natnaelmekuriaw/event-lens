@@ -74,6 +74,11 @@ export function ActivityTimeline({
         <Button>Search activity</Button>
       </form>
       <FormMessage error={formError ?? (actor ? activity.error : null)} />
+      {actor && activity.error && (
+        <Button className="mt-3" variant="outline" onClick={activity.refresh}>
+          Try activity again
+        </Button>
+      )}
       {actor && (
         <div className="mt-6">
           <p className="mb-3 text-sm font-medium">

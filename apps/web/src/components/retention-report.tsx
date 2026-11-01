@@ -19,6 +19,9 @@ export function RetentionReport({ path }: { path: string }) {
     return (
       <div className="mt-6">
         <FormMessage error={result.error} />
+        <Button className="mt-3" variant="outline" onClick={result.refresh}>
+          Try retention again
+        </Button>
       </div>
     );
   const report = result.data;

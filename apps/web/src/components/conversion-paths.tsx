@@ -436,6 +436,15 @@ export function ConversionPathsPage({
                 may fall after Through, within the completion window. Each
                 person counts once per step.
               </p>
+              {results.error && (
+                <Button
+                  className="mt-4"
+                  variant="outline"
+                  onClick={results.refresh}
+                >
+                  Try results again
+                </Button>
+              )}
               {results.loading || (!visibleResult && !results.error) ? (
                 <p className="muted mt-6" role="status">
                   Counting conversions…

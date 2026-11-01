@@ -57,6 +57,7 @@ export function AnalyticsOverviewPage({
     `/workspaces/${workspaceId}/projects?limit=100`,
   );
   const [applied, setApplied] = useState(initialRange);
+  const [filterFormKey, setFilterFormKey] = useState(0);
   const [filterError, setFilterError] = useState<string | null>(null);
   const query = queryFor(applied);
   const overview = useResource<AnalyticsOverview>(
@@ -159,6 +160,7 @@ export function AnalyticsOverviewPage({
       )}
       <Card>
         <form
+          key={filterFormKey}
           onSubmit={apply}
           className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
@@ -201,6 +203,18 @@ export function AnalyticsOverviewPage({
             <Input name="propertyValue" placeholder="browser" maxLength={200} />
           </label>
           <Button className="self-end">Apply filters</Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="self-end"
+            onClick={() => {
+              setApplied(initialRange());
+              setFilterError(null);
+              setFilterFormKey((value) => value + 1);
+            }}
+          >
+            Reset filters
+          </Button>
         </form>
         <p className="muted mt-5 text-sm">
           The selected dates are UTC. Day, Monday-start week, and month buckets

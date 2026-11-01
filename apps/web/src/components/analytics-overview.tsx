@@ -10,6 +10,7 @@ import { Input } from './ui/input';
 import { FormMessage } from './form-message';
 import { AnalyticsTrends } from './analytics-trends';
 import { ActivityTimeline } from './activity-timeline';
+import { analyticsCsv, downloadCsv, topEventsCsv } from '../lib/csv';
 
 function utcDate(instant: number) {
   return new Date(instant).toISOString().slice(0, 10);
@@ -208,6 +209,33 @@ export function AnalyticsOverviewPage({
         </p>
       ) : overview.data ? (
         <>
+          <div
+            className="mt-6 flex flex-wrap gap-3"
+            aria-label="Download analytics"
+          >
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadCsv(
+                  `eventlens-trends-${applied.from}-${applied.through}.csv`,
+                  analyticsCsv(overview.data!),
+                )
+              }
+            >
+              Download trends CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadCsv(
+                  `eventlens-top-events-${applied.from}-${applied.through}.csv`,
+                  topEventsCsv(overview.data!),
+                )
+              }
+            >
+              Download top events CSV
+            </Button>
+          </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Card>
               <h2 className="muted text-sm">Events</h2>

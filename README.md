@@ -24,6 +24,8 @@ and daily cohort retention.
   completion windows, and exact conversion counts.
 - Daily retention cohorts with project-local calendar days, exact return counts,
   independent entry/return filters, and unavailable incomplete days.
+- Browser-generated CSV downloads for filtered events and the displayed analytics,
+  conversion, and retention reports.
 - GalaxyBalls demo, migrations, health endpoints, CI, and one verification script.
 
 Public signup is disabled. Invitation links are shared privately; EventLens does
@@ -152,6 +154,7 @@ Read the [phase plan](docs/plan.md), [architecture](docs/architecture.md),
 [event semantics and operations](docs/events.md), [analytics counting rules](docs/analytics.md),
 [conversion path rules](docs/conversion-paths.md),
 [retention rules](docs/retention.md),
+[data exports](docs/exports.md),
 [self-hosting guide](docs/self-hosting.md),
 [performance qualification](docs/performance.md),
 [contribution rules](CONTRIBUTING.md), and [security notes](SECURITY.md).

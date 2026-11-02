@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   retentionQuerySchema,
   type Page,
@@ -30,6 +30,7 @@ export function RetentionPage({
   const [query, setQuery] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const filterForm = useRef<HTMLFormElement>(null);
   const [dates] = useState(() => ({
     from: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10),
     to: new Date().toISOString().slice(0, 10),
@@ -102,6 +103,7 @@ export function RetentionPage({
       <FormMessage error={error ?? project.error ?? projects.error} />
       <Card>
         <form
+          ref={filterForm}
           onSubmit={apply}
           className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
@@ -167,6 +169,18 @@ export function RetentionPage({
             </div>
           ))}
           <Button className="justify-self-start">Calculate retention</Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="justify-self-start"
+            onClick={() => {
+              filterForm.current?.reset();
+              setQuery(null);
+              setError(null);
+            }}
+          >
+            Clear report
+          </Button>
         </form>
         <p className="muted mt-4 text-sm">
           Dates use {project.data?.timezone ?? 'the project timezone'}. Each

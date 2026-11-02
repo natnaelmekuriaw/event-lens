@@ -8,10 +8,13 @@ export function useResource<T>(path: string | null) {
     data: T | null;
     error: string | null;
     loading: boolean;
-  }>({ data: null, error: null, loading: true });
+  }>({ data: null, error: null, loading: Boolean(path) });
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   useEffect(() => {
-    if (!path) return;
+    if (!path) {
+      setState({ data: null, error: null, loading: false });
+      return;
+    }
     const controller = new AbortController();
     setState({ data: null, error: null, loading: true });
     api<T>(path, { signal: controller.signal })

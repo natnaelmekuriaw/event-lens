@@ -11,7 +11,7 @@ Each phase is agreed before implementation; later phases remain proposals.
 | 4     | `feat/conversion-paths` | Ordered conversion paths, saved definitions, builder, and results                     | 32–45             |
 | 5     | `feat/retention`        | Daily cohorts, return events, observation windows                                     | 32–48             |
 | 6     | `feat/release`          | Recovery, measured performance, backup/restore, release polish                        | 20–32             |
-| 7     | `feat/product-polish`   | First-run guidance, dashboard usability, report exports, and supporting checks       | About 34          |
+| 7     | `feat/product-polish`   | First-run guidance, dashboard usability, report exports, and supporting checks        | About 34          |
 
 Phase 7 is authorized as one stage on `feat/product-polish`, based on the merged
 release and dependency updates. It covers first-run guidance, dashboard usability,
@@ -117,3 +117,18 @@ the combined verification command on the release revision.
   recovery, operating limits, and disposable cleanup. CI retains nonsecret evidence.
 - The owner executes Docker, migrations, the full suite, benchmarks, and push.
   Focused offline checks do not close these runtime gates or establish capacity.
+
+## Phase 7 acceptance
+
+- A new project explains how to save its one-time key, connect the SDK, and check
+  processing; the first-event guide covers local demo and troubleshooting.
+- Project members can download the currently filtered analytics, conversion, and
+  retention results. Filtered event export reads at most ten pages of 100 from
+  the existing member-only endpoint and reports truncation.
+- CSV quoting neutralizes spreadsheet formulas and keeps unavailable retention
+  values distinct from zero. Export requests can be cancelled.
+- Dashboard navigation, report tables, empty states, error retries, and one-time
+  key feedback work on narrow screens and with keyboard access.
+- The owner runs the single `pnpm verify` flow after dependencies install. A
+  passing PR check is required before merge; local focused checks alone do not
+  satisfy this gate.

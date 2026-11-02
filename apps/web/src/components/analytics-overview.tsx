@@ -236,7 +236,7 @@ export function AnalyticsOverviewPage({
               variant="outline"
               onClick={() =>
                 downloadCsv(
-                  `eventlens-trends-${applied.from}-${applied.through}.csv`,
+                  `eventlens-trends-${projectId}-${applied.from}-${applied.through}.csv`,
                   analyticsCsv(overview.data!),
                 )
               }
@@ -247,7 +247,7 @@ export function AnalyticsOverviewPage({
               variant="outline"
               onClick={() =>
                 downloadCsv(
-                  `eventlens-top-events-${applied.from}-${applied.through}.csv`,
+                  `eventlens-top-events-${projectId}-${applied.from}-${applied.through}.csv`,
                   topEventsCsv(overview.data!),
                 )
               }

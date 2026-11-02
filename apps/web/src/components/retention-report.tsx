@@ -7,7 +7,13 @@ import { RetentionTable } from './retention-table';
 import { Button } from './ui/button';
 import { downloadCsv, retentionCsv } from '../lib/csv';
 
-export function RetentionReport({ path }: { path: string }) {
+export function RetentionReport({
+  path,
+  projectId,
+}: {
+  path: string;
+  projectId: string;
+}) {
   const result = useResource<RetentionResult>(path);
   if (result.loading)
     return (
@@ -34,7 +40,7 @@ export function RetentionReport({ path }: { path: string }) {
           variant="outline"
           onClick={() =>
             downloadCsv(
-              `eventlens-retention-${report.from}-${report.to}.csv`,
+              `eventlens-retention-${projectId}-${report.from}-${report.to}.csv`,
               retentionCsv(report),
             )
           }

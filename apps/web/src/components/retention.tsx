@@ -197,6 +197,7 @@ export function RetentionPage({
         <RetentionReport
           key={`${query}:${revision}`}
           path={`${base}/retention?${query}`}
+          projectId={projectId}
         />
       )}
     </>

@@ -40,4 +40,21 @@ describe('bounded event export', () => {
       }),
     ).rejects.toThrow('Workspace not found');
   });
+
+  it('rejects a response that exceeds the per-page export bound', async () => {
+    await expect(
+      collectEventExport(async () => ({
+        items: Array(101).fill(null) as StoredEvent[],
+        nextCursor: null,
+      })),
+    ).rejects.toThrow('exceeded its limit');
+  });
+
+  it('propagates cancellation without returning a partial export', async () => {
+    await expect(
+      collectEventExport(async () => {
+        throw new DOMException('Cancelled', 'AbortError');
+      }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+  });
 });

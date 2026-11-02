@@ -287,6 +287,9 @@ export function AnalyticsOverviewPage({
                 <p className="muted mt-2 text-sm">
                   Try a wider range or send events from your application.
                 </p>
+                <Button asChild variant="outline" className="mt-4">
+                  <Link href={`${base}/events`}>Check event delivery</Link>
+                </Button>
               </div>
             ) : (
               <AnalyticsTrends series={overview.data.series} />

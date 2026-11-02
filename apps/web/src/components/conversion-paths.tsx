@@ -430,6 +430,19 @@ export function ConversionPathsPage({
                   />
                 </label>
                 <Button>Apply dates</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const initial = initialDates();
+                    setDates(initial);
+                    setQuery(rangeQuery(initial));
+                    setError(null);
+                    results.refresh();
+                  }}
+                >
+                  Reset dates
+                </Button>
               </form>
               <p className="muted mt-3 text-sm">
                 Entry is the first matching step in these UTC dates. Later steps

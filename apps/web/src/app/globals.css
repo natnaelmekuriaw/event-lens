@@ -27,6 +27,21 @@ input,
 select {
   scroll-margin-top: 1rem;
 }
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #047857;
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 ::selection {
   background: #d1fae5;
 }

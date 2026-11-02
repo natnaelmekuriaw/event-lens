@@ -10,6 +10,7 @@ import { Input } from './ui/input';
 import { FormMessage } from './form-message';
 import { AnalyticsTrends } from './analytics-trends';
 import { ActivityTimeline } from './activity-timeline';
+import { analyticsCsv, downloadCsv, topEventsCsv } from '../lib/csv';
 
 function utcDate(instant: number) {
   return new Date(instant).toISOString().slice(0, 10);
@@ -56,6 +57,7 @@ export function AnalyticsOverviewPage({
     `/workspaces/${workspaceId}/projects?limit=100`,
   );
   const [applied, setApplied] = useState(initialRange);
+  const [filterFormKey, setFilterFormKey] = useState(0);
   const [filterError, setFilterError] = useState<string | null>(null);
   const query = queryFor(applied);
   const overview = useResource<AnalyticsOverview>(
@@ -151,8 +153,14 @@ export function AnalyticsOverviewPage({
       <FormMessage
         error={filterError ?? project.error ?? projects.error ?? overview.error}
       />
+      {overview.error && (
+        <Button className="mt-3" variant="outline" onClick={overview.refresh}>
+          Try analytics again
+        </Button>
+      )}
       <Card>
         <form
+          key={filterFormKey}
           onSubmit={apply}
           className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
@@ -195,6 +203,18 @@ export function AnalyticsOverviewPage({
             <Input name="propertyValue" placeholder="browser" maxLength={200} />
           </label>
           <Button className="self-end">Apply filters</Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="self-end"
+            onClick={() => {
+              setApplied(initialRange());
+              setFilterError(null);
+              setFilterFormKey((value) => value + 1);
+            }}
+          >
+            Reset filters
+          </Button>
         </form>
         <p className="muted mt-5 text-sm">
           The selected dates are UTC. Day, Monday-start week, and month buckets
@@ -208,6 +228,33 @@ export function AnalyticsOverviewPage({
         </p>
       ) : overview.data ? (
         <>
+          <div
+            className="mt-6 flex flex-wrap gap-3"
+            aria-label="Download analytics"
+          >
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadCsv(
+                  `eventlens-trends-${projectId}-${applied.from}-${applied.through}.csv`,
+                  analyticsCsv(overview.data!),
+                )
+              }
+            >
+              Download trends CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadCsv(
+                  `eventlens-top-events-${projectId}-${applied.from}-${applied.through}.csv`,
+                  topEventsCsv(overview.data!),
+                )
+              }
+            >
+              Download top events CSV
+            </Button>
+          </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Card>
               <h2 className="muted text-sm">Events</h2>
@@ -240,6 +287,9 @@ export function AnalyticsOverviewPage({
                 <p className="muted mt-2 text-sm">
                   Try a wider range or send events from your application.
                 </p>
+                <Button asChild variant="outline" className="mt-4">
+                  <Link href={`${base}/events`}>Check event delivery</Link>
+                </Button>
               </div>
             ) : (
               <AnalyticsTrends series={overview.data.series} />

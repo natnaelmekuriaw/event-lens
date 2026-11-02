@@ -16,6 +16,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { FormMessage } from './form-message';
+import { conversionCsv, downloadCsv } from '../lib/csv';
 
 const blankStep = (): FunnelStep => ({ name: '' });
 const utcDate = (value: number) => new Date(value).toISOString().slice(0, 10);
@@ -429,12 +430,34 @@ export function ConversionPathsPage({
                   />
                 </label>
                 <Button>Apply dates</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const initial = initialDates();
+                    setDates(initial);
+                    setQuery(rangeQuery(initial));
+                    setError(null);
+                    results.refresh();
+                  }}
+                >
+                  Reset dates
+                </Button>
               </form>
               <p className="muted mt-3 text-sm">
                 Entry is the first matching step in these UTC dates. Later steps
                 may fall after Through, within the completion window. Each
                 person counts once per step.
               </p>
+              {results.error && (
+                <Button
+                  className="mt-4"
+                  variant="outline"
+                  onClick={results.refresh}
+                >
+                  Try results again
+                </Button>
+              )}
               {results.loading || (!visibleResult && !results.error) ? (
                 <p className="muted mt-6" role="status">
                   Counting conversions…
@@ -442,6 +465,18 @@ export function ConversionPathsPage({
               ) : (
                 visibleResult && (
                   <>
+                    <Button
+                      variant="outline"
+                      className="mt-5"
+                      onClick={() =>
+                        downloadCsv(
+                          `eventlens-conversion-${selected.id}-${dates.from}-${dates.through}.csv`,
+                          conversionCsv(visibleResult),
+                        )
+                      }
+                    >
+                      Download results CSV
+                    </Button>
                     {visibleResult.entries === 0 && (
                       <p className="muted mt-6">
                         No people entered this path in the selected dates.

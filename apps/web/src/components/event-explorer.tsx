@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type {
   Page,
   Project,
@@ -14,6 +14,12 @@ import { Input } from './ui/input';
 import { Card } from './ui/card';
 import { FormMessage } from './form-message';
 import { ProcessingStatus } from './processing-status';
+import { api, errorMessage } from '../lib/api';
+import { downloadCsv, eventsCsv } from '../lib/csv';
+import {
+  collectEventExport,
+  EVENT_EXPORT_PAGE_SIZE,
+} from '../lib/event-export';
 
 export function EventExplorer({
   workspaceId,
@@ -34,6 +40,12 @@ export function EventExplorer({
   const [cursors, setCursors] = useState<string[]>([]);
   const [live, setLive] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const filterForm = useRef<HTMLFormElement>(null);
+  const exportController = useRef<AbortController | null>(null);
+  useEffect(() => () => exportController.current?.abort(), []);
   const cursor = cursors.at(-1);
   const events = useResource<Page<StoredEvent>>(
     `${base}/events?limit=25&${filters}${cursor ? '&cursor=' + cursor : ''}`,
@@ -72,6 +84,39 @@ export function EventExplorer({
     setFilters(query.toString());
     setCursors([]);
     setSelected(null);
+    setExportNotice(null);
+  }
+  async function exportFilteredEvents() {
+    const controller = new AbortController();
+    exportController.current = controller;
+    setExporting(true);
+    setExportError(null);
+    setExportNotice(null);
+    try {
+      const exportData = await collectEventExport(async (cursor) => {
+        const params = new URLSearchParams(filters);
+        params.set('limit', String(EVENT_EXPORT_PAGE_SIZE));
+        if (cursor) params.set('cursor', cursor);
+        return api<Page<StoredEvent>>(`${base}/events?${params}`, {
+          signal: controller.signal,
+        });
+      });
+      downloadCsv(
+        `eventlens-events-${projectId}.csv`,
+        eventsCsv(exportData.items),
+      );
+      setExportNotice(
+        exportData.truncated
+          ? 'Downloaded the first 1,000 matching events. Narrow the filters to export the rest.'
+          : `Downloaded ${exportData.items.length} matching events.`,
+      );
+    } catch (error) {
+      if (controller.signal.aborted) setExportNotice('Export cancelled.');
+      else setExportError(errorMessage(error));
+    } finally {
+      exportController.current = null;
+      setExporting(false);
+    }
   }
   return (
     <>
@@ -137,12 +182,18 @@ export function EventExplorer({
       />
       <Card className="mt-6">
         <form
+          ref={filterForm}
           onSubmit={filter}
           className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-5"
         >
           <label className="field">
             Event name
-            <Input name="name" placeholder="Exact event name" maxLength={100} />
+            <Input
+              name="name"
+              placeholder="Exact event name"
+              maxLength={100}
+              disabled={exporting}
+            />
           </label>
           <label className="field">
             User or anonymous ID
@@ -150,24 +201,55 @@ export function EventExplorer({
               name="actor"
               placeholder="Exact identifier"
               maxLength={200}
+              disabled={exporting}
             />
           </label>
           <label className="field">
             From (UTC)
-            <Input name="from" type="datetime-local" />
+            <Input name="from" type="datetime-local" disabled={exporting} />
           </label>
           <label className="field">
             To (UTC)
-            <Input name="to" type="datetime-local" />
+            <Input name="to" type="datetime-local" disabled={exporting} />
           </label>
-          <Button>Apply filters</Button>
+          <Button disabled={exporting}>Apply filters</Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={exporting}
+            onClick={() => {
+              filterForm.current?.reset();
+              setFilters('');
+              setFilterError(null);
+              setCursors([]);
+              setSelected(null);
+              setExportNotice(null);
+            }}
+          >
+            Clear filters
+          </Button>
         </form>
         <div className="my-5 flex flex-wrap items-center justify-between gap-3">
           <p className="muted">
             Newest occurrence first. Times below use{' '}
             {project.data?.timezone ?? 'UTC'}. Filters use UTC.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              disabled={exporting || events.loading || Boolean(events.error)}
+              onClick={exportFilteredEvents}
+            >
+              {exporting ? 'Preparing CSV…' : 'Export events CSV'}
+            </Button>
+            {exporting && (
+              <Button
+                variant="ghost"
+                onClick={() => exportController.current?.abort()}
+              >
+                Cancel export
+              </Button>
+            )}
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -184,6 +266,11 @@ export function EventExplorer({
             </Button>
           </div>
         </div>
+        <FormMessage error={exportError} success={exportNotice} />
+        <p className="muted mb-4 text-xs">
+          CSV includes the current filters and up to 1,000 processed events.
+          Narrow the filters if more records match.
+        </p>
         {events.loading ? (
           <p role="status" className="muted py-8">
             Loading events…
@@ -205,14 +292,16 @@ export function EventExplorer({
         ) : (
           events.data && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="min-w-[560px] w-full text-left text-sm">
                 <caption className="sr-only">Project events</caption>
                 <thead className="border-b text-stone-500">
                   <tr>
-                    <th className="py-3">Event</th>
-                    <th>Occurred</th>
-                    <th>Identity</th>
-                    <th>
+                    <th scope="col" className="py-3">
+                      Event
+                    </th>
+                    <th scope="col">Occurred</th>
+                    <th scope="col">Identity</th>
+                    <th scope="col">
                       <span className="sr-only">Details</span>
                     </th>
                   </tr>
@@ -285,6 +374,15 @@ export function EventExplorer({
               </Button>
             </div>
             <FormMessage error={detail.error} />
+            {detail.error && (
+              <Button
+                className="mt-3"
+                variant="outline"
+                onClick={detail.refresh}
+              >
+                Try event details again
+              </Button>
+            )}
             {detail.loading ? (
               <p role="status">Loading event…</p>
             ) : (

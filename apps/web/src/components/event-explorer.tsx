@@ -44,6 +44,8 @@ export function EventExplorer({
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const filterForm = useRef<HTMLFormElement>(null);
+  const exportController = useRef<AbortController | null>(null);
+  useEffect(() => () => exportController.current?.abort(), []);
   const cursor = cursors.at(-1);
   const events = useResource<Page<StoredEvent>>(
     `${base}/events?limit=25&${filters}${cursor ? '&cursor=' + cursor : ''}`,
@@ -85,6 +87,8 @@ export function EventExplorer({
     setExportNotice(null);
   }
   async function exportFilteredEvents() {
+    const controller = new AbortController();
+    exportController.current = controller;
     setExporting(true);
     setExportError(null);
     setExportNotice(null);
@@ -93,7 +97,9 @@ export function EventExplorer({
         const params = new URLSearchParams(filters);
         params.set('limit', String(EVENT_EXPORT_PAGE_SIZE));
         if (cursor) params.set('cursor', cursor);
-        return api<Page<StoredEvent>>(`${base}/events?${params}`);
+        return api<Page<StoredEvent>>(`${base}/events?${params}`, {
+          signal: controller.signal,
+        });
       });
       downloadCsv(
         `eventlens-events-${projectId}.csv`,
@@ -105,8 +111,10 @@ export function EventExplorer({
           : `Downloaded ${exportData.items.length} matching events.`,
       );
     } catch (error) {
-      setExportError(errorMessage(error));
+      if (controller.signal.aborted) setExportNotice('Export cancelled.');
+      else setExportError(errorMessage(error));
     } finally {
+      exportController.current = null;
       setExporting(false);
     }
   }
@@ -227,6 +235,14 @@ export function EventExplorer({
             >
               {exporting ? 'Preparing CSV…' : 'Export events CSV'}
             </Button>
+            {exporting && (
+              <Button
+                variant="ghost"
+                onClick={() => exportController.current?.abort()}
+              >
+                Cancel export
+              </Button>
+            )}
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

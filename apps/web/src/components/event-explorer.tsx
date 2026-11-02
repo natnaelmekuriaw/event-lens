@@ -188,7 +188,12 @@ export function EventExplorer({
         >
           <label className="field">
             Event name
-            <Input name="name" placeholder="Exact event name" maxLength={100} />
+            <Input
+              name="name"
+              placeholder="Exact event name"
+              maxLength={100}
+              disabled={exporting}
+            />
           </label>
           <label className="field">
             User or anonymous ID
@@ -196,20 +201,22 @@ export function EventExplorer({
               name="actor"
               placeholder="Exact identifier"
               maxLength={200}
+              disabled={exporting}
             />
           </label>
           <label className="field">
             From (UTC)
-            <Input name="from" type="datetime-local" />
+            <Input name="from" type="datetime-local" disabled={exporting} />
           </label>
           <label className="field">
             To (UTC)
-            <Input name="to" type="datetime-local" />
+            <Input name="to" type="datetime-local" disabled={exporting} />
           </label>
-          <Button>Apply filters</Button>
+          <Button disabled={exporting}>Apply filters</Button>
           <Button
             type="button"
             variant="outline"
+            disabled={exporting}
             onClick={() => {
               filterForm.current?.reset();
               setFilters('');

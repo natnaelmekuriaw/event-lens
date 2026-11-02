@@ -267,6 +267,10 @@ export function EventExplorer({
           </div>
         </div>
         <FormMessage error={exportError} success={exportNotice} />
+        <p className="muted mb-4 text-xs">
+          CSV includes the current filters and up to 1,000 processed events.
+          Narrow the filters if more records match.
+        </p>
         {events.loading ? (
           <p role="status" className="muted py-8">
             Loading events…
